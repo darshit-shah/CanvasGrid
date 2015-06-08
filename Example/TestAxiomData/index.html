@@ -1,0 +1,42 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title></title>
+    <script src="/plugins/jquery/js/jquery-1.7.2.min.js"></script>
+    <script src="/axiomAPI.js" type="text/javascript"></script>
+    <script src="/plugins/jquery/js/jquery-ui-1.8.21.custom-darshit-min.js"></script>
+    <link rel="stylesheet" href="/plugins/hallo/jquery-ui-bootstrap/css/custom-theme/jquery-ui-1.8.16.custom.css">
+    <script src="/plugins/axiomGridCanvas/AxiomGridCanvas.js"></script>
+    <link type="text/css" href="/plugins/axiomGridCanvas/AxiomGridCanvas.css" rel="stylesheet" />
+    <script src="/plugins/d3/d3.v3.js"></script>
+    <script src="axiomDataWrapper.js"></script>
+    <style>
+        .ui-resizable-helper
+        {
+            border: 2px dotted steelblue;
+        }
+    </style>
+</head>
+<body>
+    <div id="content">
+        <div style="width: 100%; float: left; margin: 5px;">
+            <label style="float: left; font-size: 13px; color: #666; width: 80px; margin:5px;">
+                From Project :
+            </label>
+            <select id="drpFromProject" style="float: left; font-size: 13px; width: 300px; margin:5px;">
+            </select>
+            <label style="float: left; font-size: 13px; color: #666; width: 70px; margin:5px;">
+                View Name :</label>
+            <select id="drpTable" style="float: left; font-size: 13px; width: 300px; margin:5px;">
+            </select>
+            <button id="btnGetData" style="float: left; margin:5px;">
+                Show Data
+            </button>
+        </div>
+        <div id="resizableDiv" style="border: 1px solid #000000; width: auto; display: table;">
+            <div id="myDiv" style="min-width: 500px; min-height: 300px; position: relative; display:none;">
+            </div>
+        </div>
+    </div>
+</body>
+</html>

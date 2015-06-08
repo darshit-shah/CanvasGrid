@@ -1,0 +1,118 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title></title>
+    <script src="jquery-1.7.2.min.js"></script>
+    <script src="jquery-ui-1.8.21.custom.min.js"></script>
+    <!--<link rel="stylesheet" href="../../../plugins/hallo/jquery-ui-bootstrap/css/custom-theme/jquery-ui-1.8.16.custom.css">-->
+    <script src="d3.v3.js"></script>
+    <script src="../../CanvasGrid.js"></script>
+    <link type="text/css" href="../../CanvasGrid.css" rel="stylesheet" />
+    <script>
+        $(document).ready(function () {
+            var colInfo = [];
+            var numCols = 50;
+            var numRows = 100;
+            for (var col = 0; col < numCols; col++) {
+                var info = {};
+                info.name = 'Column' + (col + 1);
+                info.width = 100 + parseInt(Math.random() * 50 * 0);
+                if (col % 3 == 0) {
+                    info.editable = true;
+                }
+                colInfo.push(info);
+                info = null;
+            }
+            var data = [];
+
+            for (var row = 0; row < numRows; row++) {
+                var rowInfo = { height: 24 + parseInt(Math.random() * 40) };
+                if (row < 4) {
+                    rowInfo.height = 40;
+                }
+                for (var col = 0; col < numCols; col++) {
+                    rowInfo[colInfo[col].name] = {};
+                    rowInfo[colInfo[col].name].value = col + '_' + row;
+                    //                    if (col == 5 && row == 10)
+                    //                        rowInfo[colInfo[col].name].value = 'Hi my name is darshit yogesh shah. I stay at E-17, Ratnadeep Complex, B/H Rahul Tower, 100FT Satellite Road, Satellite, Ahmedabad 380015.';
+                    //rowInfo[colInfo[col].name].invalid = (Math.random() > 0.95 ? true : false);
+                    rowInfo[colInfo[col].name].formatting = {};
+                    //                    rowInfo[colInfo[col].name].formatting.background = '#FEFEFE';
+                    //                    rowInfo[colInfo[col].name].formatting.color = 'black';
+                    if (col == 0 && row == 0) {
+                        rowInfo[colInfo[col].name].formatting.rowSpan = 4;
+                        rowInfo[colInfo[col].name].formatting.colSpan = 1;
+                        rowInfo[colInfo[col].name].value = 'Date'
+                    }
+                    if (col == 1 && row == 0) {
+                        rowInfo[colInfo[col].name].formatting.rowSpan = 1;
+                        rowInfo[colInfo[col].name].formatting.colSpan = 15;
+                        rowInfo[colInfo[col].name].value = 'Plan Dispatch'
+                        rowInfo[colInfo[col].name].formatting.background = 'yellow';
+                        rowInfo[colInfo[col].name].formatting.textAlign = 'center';
+                    }
+                    if (col == 1 && row == 1) {
+                        rowInfo[colInfo[col].name].formatting.rowSpan = 1;
+                        rowInfo[colInfo[col].name].formatting.colSpan = 5;
+                        rowInfo[colInfo[col].name].value = 'PCW'
+                    }
+                    if (col == 6 && row == 1) {
+                        rowInfo[colInfo[col].name].formatting.rowSpan = 1;
+                        rowInfo[colInfo[col].name].formatting.colSpan = 5;
+                        rowInfo[colInfo[col].name].value = 'RCW'
+                    }
+                    if (col == 11 && row == 1) {
+                        rowInfo[colInfo[col].name].formatting.rowSpan = 1;
+                        rowInfo[colInfo[col].name].formatting.colSpan = 5;
+                        rowInfo[colInfo[col].name].value = 'GCT'
+                    }
+                    //                    if (col == 0 && row == 0) {
+                    //                        rowInfo[colInfo[col].name].formatting.rowSpan = 3;
+                    //                        rowInfo[colInfo[col].name].formatting.colSpan = numCols;
+                    //                    }
+                    //                    if (col < (numCols - 5) && row < (numRows - 5)) {
+                    //                        if (col == 5 && (row % 7 == 2)) {
+                    //                            //rowInfo[colInfo[col].name].value = 'My Name is Darshit Y Shah.'; // Staying @ Ahmedabad since 10 years. One two three four five six seven eight nine My Name is Darshit Y Shah. Staying @ Ahmedabad since 10 years. One two three four five six seven eight nine My Name is Darshit Y Shah. Staying @ Ahmedabad since 10 years. One two three four five six seven eight nine';
+                    //                            rowInfo[colInfo[col].name].formatting.rowSpan = 3;
+                    //                            rowInfo[colInfo[col].name].formatting.colSpan = 3;
+                    //                            rowInfo[colInfo[col].name].formatting.textAlign = 'center';
+                    //                            rowInfo[colInfo[col].name].formatting.textBaseline = 'middle';
+                    //                            rowInfo[colInfo[col].name].formatting.color = 'red';
+                    //                            rowInfo[colInfo[col].name].formatting.border = { left: { color: 'red', style: 'solid', width: 3 }, top: { color: 'green', style: '', width: 3 }, right: { color: 'orange', style: 'solid', width: 3 }, bottom: { color: 'blue', style: 'solid', width: 3} };
+                    //                            rowInfo[colInfo[col].name].formatting.font = { size: 15 };
+                    //                        }
+                    //                    }
+
+                    //                    rowInfo[colInfo[col].name].formatting.font = {};
+                    //                    rowInfo[colInfo[col].name].formatting.font.bold = (Math.random() < 0.85 ? false : true);
+                    //                    rowInfo[colInfo[col].name].formatting.font.italics = (Math.random() < 0.85 ? false : true);
+                    //                    rowInfo[colInfo[col].name].formatting.font.size = 8 + parseInt(Math.random() * 10);
+                    //                    rowInfo[colInfo[col].name].formatting.textAlign = (Math.random() < 0.5 ? 'center' : (Math.random() < 0.5 ? 'left' : 'right'));
+                    //                    rowInfo[colInfo[col].name].formatting.textBaseline = (Math.random() < 0.5 ? 'middle' : (Math.random() < 0.5 ? 'top' : 'bottom'));
+
+                }
+                data.push(rowInfo);
+            }
+            //            $('#resizableDiv').resizable({ helper: "ui-resizable-helper" });
+            //            $('#resizableDiv').on('resizestop', function (evt, ui) {
+            //                $('#myDiv').trigger('resize', [ui.size.width, ui.size.height]);
+            //            });
+            myGrid = $('#myDiv').CanvasGrid({ colInfo: colInfo, data: data, readOnly: true });
+            myGrid.addCellSelector($('#myDiv'), "Green", 1, 1, 1, 1, "MyGrid")
+            //            $('#myDiv').trigger('resize', [$(window).width() - 20, $(window).height() - 20]);
+        });
+    </script>
+    <style>
+        .ui-resizable-helper
+        {
+            border: 2px dotted steelblue;
+        }
+    </style>
+</head>
+<body>
+    <div id="resizableDiv" style="border: 1px solid #000000; width: auto; display: table;">
+        <div id="myDiv" style="width: 1400px; min-height: 900px; position: relative;">
+        </div>
+    </div>
+</body>
+</html>

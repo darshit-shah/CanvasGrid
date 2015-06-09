@@ -71,9 +71,6 @@ function loadTable(data) {
         var measures = [colArr[3]];
 
         //table level config
-        var collapsible = true;
-        var showSummary = true;
-        var repeatContent = false;
         var grandTotal = {
             position: 'top',
             aggregation: {
@@ -84,150 +81,205 @@ function loadTable(data) {
                 count: { display: false, summaryTitle: '#', style: { bgColor: '#FFDEAD', foreColor: '#000', fontWeight: 'bold'} }
             }
         };
+        prepareData({ collapsible: true, showSummary: $('#chkShowSummary').is(":checked"), repeatContent: $('#chkRepeatContent').is(":checked"), grandTotal: grandTotal, dimensions: dimensions, measures: measures, data: data.content.tableData, cb: bindGrid });
+    }
+}
 
-        var summaryRowCount = 0;
-        if (grandTotal != undefined) {
-            if (grandTotal.aggregation.sum.display == true) summaryRowCount++;
-            if (grandTotal.aggregation.min.display == true) summaryRowCount++;
-            if (grandTotal.aggregation.max.display == true) summaryRowCount++;
-            if (grandTotal.aggregation.avg.display == true) summaryRowCount++;
-            if (grandTotal.aggregation.count.display == true) summaryRowCount++;
-            grandTotal.summaryRowCount = summaryRowCount;
+function prepareData(options) {
+    var collapsible = options.collapsible;
+    var showSummary = options.showSummary;
+    var repeatContent = options.repeatContent;
+    var grandTotal = options.grandTotal;
+    var dimensions = options.dimensions;
+    var measures = options.measures;
+    var data = options.data;
+
+    var summaryRowCount = 0;
+    if (grandTotal != undefined) {
+        if (grandTotal.aggregation.sum.display == true) summaryRowCount++;
+        if (grandTotal.aggregation.min.display == true) summaryRowCount++;
+        if (grandTotal.aggregation.max.display == true) summaryRowCount++;
+        if (grandTotal.aggregation.avg.display == true) summaryRowCount++;
+        if (grandTotal.aggregation.count.display == true) summaryRowCount++;
+        grandTotal.summaryRowCount = summaryRowCount;
+    }
+
+    for (var i = 0; i < dimensions.length - 1; i++) {
+        dimensions[i].collapsible = dimensions[i].collapsible != undefined ? dimensions[i].collapsible : collapsible;
+        dimensions[i].repeatContent = dimensions[i].repeatContent != undefined ? dimensions[i].repeatContent : repeatContent;
+        dimensions[i].summaryRowCount = 0;
+        if (showSummary == true) {
+            if (dimensions[i].summary.aggregation.sum.display == true) dimensions[i].summaryRowCount++;
+            if (dimensions[i].summary.aggregation.min.display == true) dimensions[i].summaryRowCount++;
+            if (dimensions[i].summary.aggregation.max.display == true) dimensions[i].summaryRowCount++;
+            if (dimensions[i].summary.aggregation.avg.display == true) dimensions[i].summaryRowCount++;
+            if (dimensions[i].summary.aggregation.count.display == true) dimensions[i].summaryRowCount++;
         }
+    }
 
-        for (var i = 0; i < dimensions.length - 1; i++) {
-            dimensions[i].collapsible = dimensions[i].collapsible != undefined ? dimensions[i].collapsible : collapsible;
-            dimensions[i].repeatContent = dimensions[i].repeatContent != undefined ? dimensions[i].repeatContent : repeatContent;
-            dimensions[i].summaryRowCount = 0;
-            if (showSummary == true) {
-                if (dimensions[i].summary.aggregation.sum.display == true) dimensions[i].summaryRowCount++;
-                if (dimensions[i].summary.aggregation.min.display == true) dimensions[i].summaryRowCount++;
-                if (dimensions[i].summary.aggregation.max.display == true) dimensions[i].summaryRowCount++;
-                if (dimensions[i].summary.aggregation.avg.display == true) dimensions[i].summaryRowCount++;
-                if (dimensions[i].summary.aggregation.count.display == true) dimensions[i].summaryRowCount++;
-            }
-        }
+    var arrSummaryRowsDet = axiomPivotHelper.prepareSummaryRow(data, dimensions, measures, grandTotal);
+    var arrSummaryRows = arrSummaryRowsDet.summaryRows;
+    var collapsedInfo = arrSummaryRowsDet.collapsedInfo;
 
-        var arrSummaryRowsDet = axiomPivotHelper.prepareSummaryRow(data.content.tableData, dimensions, measures, grandTotal);
-        var arrSummaryRows = arrSummaryRowsDet.summaryRows;
-        var collapsedInfo = arrSummaryRowsDet.collapsedInfo;
+    var colInfo = [];
+    for (var i = 0; i < dimensions.length; i++) {
+        var info = {};
+        info.name = dimensions[i].fieldRefNumber;
+        info.width = 200;
+        colInfo.push(info);
+        info = null;
+    }
+    for (var i = 0; i < measures.length; i++) {
+        var info = {};
+        info.name = measures[i].fieldRefNumber;
+        info.width = 200;
+        colInfo.push(info);
+        info = null;
+    }
 
-        var colInfo = [];
-        for (var i = 0; i < data.content.fieldData.length; i++) {
-            var info = {};
-            info.name = data.content.fieldData[i].fieldRefNumber;
-            info.width = 200;
-            colInfo.push(info);
-            info = null;
-        }
-
+    function processData() {
         var icons = [];
-        function processData() {
-            icons = [];
-            var colData = JSON.parse(JSON.stringify(colInfo));
-            var rowData = [];
-
-            var currSummaryRow = 0;
-            var rowIndex = 0;
-            for (var r = 0; r < data.content.tableData.length; r++) {
-                if (currSummaryRow < arrSummaryRows.length && (r - 1 >= arrSummaryRows[currSummaryRow].rEndIndex)) {
-                    if (r - 1 == arrSummaryRows[currSummaryRow].rEndIndex) {
-                        rowData.push($.extend(true, {}, arrSummaryRows[currSummaryRow].row));
-                        rowIndex++;
+        var colData = JSON.parse(JSON.stringify(colInfo));
+        var rowData = [];
+        var latestCollapsedInfo = {};
+        var currSummaryRow = 0;
+        var rowIndex = 0;
+        for (var r = 0; r < data.length; r++) {
+            if (showSummary == true && currSummaryRow < arrSummaryRows.length && (r - 1 >= arrSummaryRows[currSummaryRow].rEndIndex)) {
+                if (r - 1 == arrSummaryRows[currSummaryRow].rEndIndex) {
+                    rowData.push($.extend(true, {}, arrSummaryRows[currSummaryRow].row));
+                    if (repeatContent == false && arrSummaryRows[currSummaryRow].cIndex != undefined) {
+                        for (var cNext = 0; cNext < arrSummaryRows[currSummaryRow].cIndex; cNext++) {
+                            rowData[rowData.length - 1][colInfo[cNext].name] = "";
+                        }
                     }
-                    currSummaryRow++;
-                    r--;
+                    rowIndex++;
                 }
-                else {
-                    if (collapsedInfo[r] != undefined) {
-                        var added = false;
-                        for (var c = 0; c < colInfo.length; c++) {
-                            if (collapsedInfo[r][colData[c].name] != undefined) {
-                                icons.push({ id: rowIndex + '_' + c, row: (rowIndex + 1), col: (c + 1), data: { r: r, c: c} });
-                                if (collapsedInfo[r][colData[c].name].isCollapsed) {
-                                    rowData.push($.extend(true, {}, data.content.tableData[r]));
-                                    for (var cNext = c + 1; cNext < colInfo.length; cNext++) {
-                                        rowData[rowData.length - 1][colInfo[cNext].name] = "";
+                currSummaryRow++;
+                r--;
+            }
+            else {
+                if (collapsedInfo[r] != undefined) {
+                    latestCollapsedInfo = collapsedInfo[r];
+                    var added = false;
+                    for (var c = 0; c < dimensions.length - 1; c++) {
+                        if (collapsedInfo[r][colData[c].name] != undefined) {
+                            icons.push({ id: rowIndex + '_' + c, row: (rowIndex + 1), col: (c + 1), data: { r: r, c: c} });
+                            if (collapsedInfo[r][colData[c].name].isCollapsed) {
+                                rowData.push($.extend(true, {}, data[r]));
+                                if (repeatContent == false) {
+                                    for (var cNext = 0; cNext < c; cNext++) {
+                                        if (!latestCollapsedInfo.hasOwnProperty(colInfo[cNext].name))
+                                            rowData[rowData.length - 1][colInfo[cNext].name] = "";
                                     }
-                                    rowIndex++;
-                                    added = true;
-                                    //debugger;
-                                    r += (collapsedInfo[r][colData[c].name].rEndIndex - collapsedInfo[r][colData[c].name].rStartIndex);
-                                    while (currSummaryRow < arrSummaryRows.length && (r >= arrSummaryRows[currSummaryRow].rEndIndex)) {
-                                        if (r == arrSummaryRows[currSummaryRow].rEndIndex && arrSummaryRows[currSummaryRow].cIndex <= c) {
-                                            rowData.push($.extend(true, {}, arrSummaryRows[currSummaryRow].row));
-                                            rowIndex++;
+                                }
+                                for (var cNext = c + 1; cNext < colInfo.length; cNext++) {
+                                    rowData[rowData.length - 1][colInfo[cNext].name] = "";
+                                }
+                                rowIndex++;
+                                added = true;
+                                //debugger;
+                                r += (collapsedInfo[r][colData[c].name].rEndIndex - collapsedInfo[r][colData[c].name].rStartIndex);
+                                while (showSummary == true && currSummaryRow < arrSummaryRows.length && (r >= arrSummaryRows[currSummaryRow].rEndIndex)) {
+                                    if (r == arrSummaryRows[currSummaryRow].rEndIndex && arrSummaryRows[currSummaryRow].cIndex <= c) {
+                                        rowData.push($.extend(true, {}, arrSummaryRows[currSummaryRow].row));
+                                        if (repeatContent == false) {
+                                            for (var cNext = 0; cNext < c; cNext++) {
+                                                if (arrSummaryRows[currSummaryRow].cIndex == c)
+                                                    rowData[rowData.length - 1][colInfo[cNext].name] = "";
+                                            }
                                         }
-                                        currSummaryRow++;
+                                        rowIndex++;
                                     }
-                                    break;
+                                    currSummaryRow++;
+                                }
+                                break;
+                            }
+                        }
+                    }
+                    if (!added) {
+                        rowData.push($.extend(true, {}, data[r]));
+                        if (repeatContent == false) {
+                            for (var c = 0; c < dimensions.length - 1; c++) {
+                                if (!latestCollapsedInfo.hasOwnProperty(colData[c].name)) {
+                                    rowData[rowData.length - 1][colData[c].name] = "";
                                 }
                             }
                         }
-                        if (!added) {
-                            rowData.push($.extend(true, {}, data.content.tableData[r]));
-                            rowIndex++;
-                        }
-                    }
-                    else {
-                        rowData.push($.extend(true, {}, data.content.tableData[r]));
                         rowIndex++;
                     }
                 }
-            }
-
-            while (currSummaryRow < arrSummaryRows.length) {
-                rowData.push($.extend(true, {}, arrSummaryRows[currSummaryRow].row));
-                currSummaryRow++;
-            }
-
-            var rowInfo = [];
-            for (var row = 0; row < rowData.length; row++) {
-                var info = { height: 24 };
-                for (var col = 0; col < colInfo.length; col++) {
-                    info[colInfo[col].name] = {};
-                    info[colInfo[col].name].value = "     " + rowData[row][colInfo[col].name].toString();
-                    info[colInfo[col].name].formatting = {};
-                    var formatting = JSON.parse(rowData[row]['formatting']);
-                    if (formatting[colInfo[col].name] && formatting[colInfo[col].name].bgColor)
-                        info[colInfo[col].name].formatting.background = formatting[colInfo[col].name].bgColor;
-                    if (formatting[colInfo[col].name] && formatting[colInfo[col].name].foreColor)
-                        info[colInfo[col].name].formatting.color = formatting[colInfo[col].name].foreColor;
+                else {
+                    rowData.push($.extend(true, {}, data[r]));
+                    if (repeatContent == false) {
+                        for (var c = 0; c < dimensions.length - 1; c++) {
+                            rowData[rowData.length - 1][colData[c].name] = "";
+                        }
+                    }
+                    rowIndex++;
                 }
-                rowInfo.push(info);
-            }
-
-
-            if ($('#myDiv').data('objCanvasGrid') == undefined) {
-                $('#myDiv').data('objCanvasGrid', null);
-                myGrid = $('#myDiv').CanvasGrid({ colInfo: colData, data: rowInfo, readOnly: true });
-                myGrid.addCellSelector($('#myDiv'), "Green", 1, 1, 1, 1, "MyGrid");
-            }
-            else {
-                myGrid.updateData($('#myDiv'), rowInfo);
-            }
-            for (var i = 0; i < icons.length; i++) {
-                addIcon(icons[i].id, icons[i].row, icons[i].col, icons[i].data);
             }
         }
 
+        while (showSummary == true && currSummaryRow < arrSummaryRows.length) {
+            rowData.push($.extend(true, {}, arrSummaryRows[currSummaryRow].row));
+            if (repeatContent == false && arrSummaryRows[currSummaryRow].cIndex != undefined) {
+                for (var cNext = 0; cNext < arrSummaryRows[currSummaryRow].cIndex; cNext++) {
+                    rowData[rowData.length - 1][colInfo[cNext].name] = "";
+                }
+            }
+            currSummaryRow++;
+        }
+
+        var rowInfo = [];
+        for (var row = 0; row < rowData.length; row++) {
+            var info = { height: 24 };
+            for (var col = 0; col < colInfo.length; col++) {
+                info[colInfo[col].name] = {};
+                info[colInfo[col].name].value = "     " + rowData[row][colInfo[col].name].toString();
+                info[colInfo[col].name].formatting = {};
+                var formatting = JSON.parse(rowData[row]['formatting']);
+                if (formatting[colInfo[col].name] && formatting[colInfo[col].name].bgColor)
+                    info[colInfo[col].name].formatting.background = formatting[colInfo[col].name].bgColor;
+                if (formatting[colInfo[col].name] && formatting[colInfo[col].name].foreColor)
+                    info[colInfo[col].name].formatting.color = formatting[colInfo[col].name].foreColor;
+            }
+            rowInfo.push(info);
+        }
+        options.cb(colInfo, rowInfo, icons, collapsedInfo, processData);
+    }
+    processData();
+}
+
+function bindGrid(colInfo, rowInfo, icons, collapsedInfo, processData) {
+    if ($('#myDiv').data('objCanvasGrid') == undefined) {
+        $('#myDiv').data('objCanvasGrid', null);
+        myGrid = $('#myDiv').CanvasGrid({ colInfo: [].concat(colInfo), data: rowInfo, readOnly: true });
+        myGrid.addCellSelector($('#myDiv'), "Green", 1, 1, 1, 1, "MyGrid");
+    }
+    else {
+        myGrid.updateData($('#myDiv'), rowInfo);
+    }
+    for (var i = 0; i < icons.length; i++) {
+        addIcon(icons[i].id, icons[i].row, icons[i].col, icons[i].data, colInfo, collapsedInfo, processData);
+    }
+}
+
+function addIcon(id, row, col, data, colInfo, collapsedInfo, processData) {
+    var icon = $('<img>');
+    if (collapsedInfo[data.r][colInfo[data.c].name].isCollapsed == true) {
+        icon.attr("src", "expand.png")
+    }
+    else {
+        icon.attr("src", "collapse.png")
+    }
+    icon.css("margin-top", "2px");
+    icon.attr("id", id);
+    icon.data('data', data);
+    icon.on('click', function (e) {
+        collapsedInfo[data.r][colInfo[data.c].name].isCollapsed = !collapsedInfo[data.r][colInfo[data.c].name].isCollapsed;
+        icons = [];
         processData();
-    }
-    function addIcon(id, row, col, data) {
-        var icon = $('<img>');
-        if (collapsedInfo[data.r][colInfo[data.c].name].isCollapsed == true) {
-            icon.attr("src", "expand.png")
-        }
-        else {
-            icon.attr("src", "collapse.png")
-        }
-        icon.css("margin-top", "-10px");
-        icon.attr("id", id);
-        icon.data('data', data);
-        icon.on('click', function (e) {
-            collapsedInfo[data.r][colInfo[data.c].name].isCollapsed = !collapsedInfo[data.r][colInfo[data.c].name].isCollapsed;
-            processData();
-        });
-        myGrid.setItem($('#myDiv'), id, icon, row, col);
-    }
+    });
+    myGrid.setItem($('#myDiv'), id, icon, row, col);
 }

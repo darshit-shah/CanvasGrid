@@ -36,6 +36,12 @@
             else
                 return ele.data('objCanvasGrid').setItem(key, item, row, col);
         },
+        removeItem: function (ele, key) {
+            if (ele.data('objCanvasGrid') == undefined)
+                console.log('error in removeItem');
+            else
+                return ele.data('objCanvasGrid').removeItem(key);
+        },
         updateData: function (ele, data) {
             if (ele.data('objCanvasGrid') == undefined)
                 console.log('error in updateData');
@@ -687,10 +693,9 @@
                     }
 
                     anotatedItems[selectorIndex].item
-                        .css('left', x0 + 'px');
-                    anotatedItems[selectorIndex].item
+                        .css('left', x0 + 'px')
                         .css('top', function (x) {
-                            return (y0 + ((y1 - (y0)) / 2)) + 'px';
+                            return y0 + 'px';
                         });
                 }
                 else {
@@ -704,8 +709,6 @@
             if (rowStartIndex == -1 || rowEndIndex == -1 || colStartIndex == -1 || colEndIndex == -1)
                 return;
             adjustRowCol();
-            if (triggerChange != false)
-                ele.trigger('updateSelection', [{ key: options.MyKey, colStart: selectedColStartIndex[options.MyKey], rowStart: selectedRowStartIndex[options.MyKey], colEnd: selectedColEndIndex[options.MyKey], rowEnd: selectedRowEndIndex[options.MyKey]}]);
             var keys = Object.keys(selectedEndBox);
             for (var iSelector = 0; iSelector < keys.length; iSelector++) {
                 selectorIndex = keys[iSelector];
@@ -851,6 +854,8 @@
                     }
                 }
             }
+            if (triggerChange != false)
+                ele.trigger('updateSelection', [{ key: options.MyKey, colStart: selectedColStartIndex[options.MyKey], rowStart: selectedRowStartIndex[options.MyKey], colEnd: selectedColEndIndex[options.MyKey], rowEnd: selectedRowEndIndex[options.MyKey], selectedStartBox: selectedStartBox[options.MyKey], selectedEndBox: selectedEndBox[options.MyKey]}]);
             updateAnotatedItemPositions();
         }
 
@@ -859,14 +864,6 @@
                 key = options.MyKey;
             if (x == -1) {
                 if (cellSelectorsVisible[key] == true) {
-                    //                    d3.select(cellSelectors[key][0])
-                    //                            .transition()
-                    //                            .duration(isDragStart == true ? 0 : 100)
-                    //                            .style('left', '-10px')
-                    //                            .style('top', '-10px')
-                    //                            .style('width', '0px')
-                    //                            .style('height', '0px')
-                    //                            ;
                     cellSelectors[key].hide();
                     cellSelectorsVisible[key] = false;
                 }
@@ -913,8 +910,10 @@
                 }
                 cellEditorSizes = { x: x, y: y, x1: x1, y1: y1 };
 
-                y1 -= 2 * (parseFloat(cellEditor.css('border-width')) + parseFloat(cellEditor.css('padding')));
-                x1 -= 2 * (parseFloat(cellEditor.css('border-width')) + parseFloat(cellEditor.css('padding')));
+                x1 -= 2 * (cellSelectorBorder + parseFloat(cellEditor.css('padding')));
+                y1 -= 2 * (cellSelectorBorder + parseFloat(cellEditor.css('padding')));
+                //                y1 -= 2 * (parseFloat(cellEditor.css('border-width')) + parseFloat(cellEditor.css('padding')));
+                //                x1 -= 2 * (parseFloat(cellEditor.css('border-width')) + parseFloat(cellEditor.css('padding')));
 
                 cellEditor.css('left', x);
                 cellEditor.css('top', y);
@@ -1510,8 +1509,8 @@
 
             delete selectedStartBox[key];
             delete selectedEndBox[key];
-
-            cellSelectors[key].remove();
+            if (cellSelectors[key].length > 0)
+                cellSelectors[key].remove();
             delete cellSelectors[key];
             delete cellSelectorsVisible[key];
         }
@@ -1556,12 +1555,19 @@
             anotatedItems[key] = { item: item, row: row, col: col, visible: false };
             anotatedItems[key].item.css("position", "absolute");
             anotatedItems[key].item.show();
-            anotatedItems[key].item.css('left', -100);
-            anotatedItems[key].item.css('top', -100);
+            //            anotatedItems[key].item.css('left', -100);
+            //            anotatedItems[key].item.css('top', -100);
             mainEvents.append(anotatedItems[key].item);
             setTimeout(function () {
                 updateAnotatedItemPositions();
             }, 0);
+        }
+
+        this.removeItem = function (key) {
+            if (anotatedItems[key] != undefined) {
+                anotatedItems[key].item.remove();
+                delete anotatedItems[key];
+            }
         }
 
         this.updateData = function (localData) {

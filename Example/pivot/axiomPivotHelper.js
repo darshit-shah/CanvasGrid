@@ -208,149 +208,170 @@
         }
         return { summaryRows: arrSummaryRows, collapsedInfo: collapsedInfo };
     },
-    //insert summary rows
-    insertSummaryRows: function (data, summaryRows, showDimensionsSummary, showGrandSummary, grandSummaryRowsPosition, grandSummaryRowsCount) {
-        if (showDimensionsSummary && showGrandSummary) {//all rows
-            for (var i = 0; i < summaryRows.length; i++) {
-                data.splice(summaryRows[i].rEndIndex + 1, 0, summaryRows[i].row);
-                for (var j = i + 1; j < summaryRows.length; j++) {
-                    summaryRows[j].rEndIndex++;
-                }
-            }
-        }
-        else if (showDimensionsSummary && !showGrandSummary) {//only summary rows
-            if (grandSummaryRowsPosition == 'top') {
-                for (var i = grandSummaryRowsCount; i < summaryRows.length; i++) {
-                    data.splice(summaryRows[i].rEndIndex + 1, 0, summaryRows[i].row);
-                    for (var j = i + 1; j < summaryRows.length; j++) {
-                        summaryRows[j].rEndIndex++;
-                    }
-                }
-            }
-            else {
-                for (var i = 0; i < summaryRows.length - grandSummaryRowsCount; i++) {
-                    data.splice(summaryRows[i].rEndIndex + 1, 0, summaryRows[i].row);
-                    for (var j = i + 1; j < summaryRows.length; j++) {
-                        summaryRows[j].rEndIndex++;
-                    }
-                }
-            }
-        }
-        else if (!showDimensionsSummary && showGrandSummary) {//only grand totals
-            if (grandSummaryRowsPosition == 'top') {
-                for (var i = 0; i < grandSummaryRowsCount; i++) {
-                    data.splice(summaryRows[i].rEndIndex + 1, 0, summaryRows[i].row);
-                    for (var j = i + 1; j < summaryRows.length; j++) {
-                        summaryRows[j].rEndIndex++;
-                    }
-                }
-            }
-            else {
-                for (var i = summaryRows.length - 1; i >= summaryRows.length - grandSummaryRowsCount; i--) {
-                    data.splice(summaryRows[i].rEndIndex + 1, 0, summaryRows[i].row);
-                    for (var j = i + 1; j < summaryRows.length; j++) {
-                        summaryRows[j].rEndIndex++;
-                    }
-                }
-            }
-        }
-    },
-    sortData: function () {
-    },
-    findExpandCollapseCells: function (data, arrFields, options) {
-        var rStartPos = 0;
-        if (options.grandTotal) {
-            if (options.grandTotal.position && options.grandTotal.position == 'top')
-                rStartPos = options.grandTotal.summaryRowCount;
-        }
+    prepareData: function (options) {
+        var collapsible = options.collapsible;
+        var showSummary = options.showSummary;
+        var repeatContent = options.repeatContent;
+        var grandTotal = options.grandTotal;
+        var dimensions = options.dimensions;
+        var measures = options.measures;
+        var data = options.data;
 
-        //find expand collapse cells
-        var arrRowStartIndex = [rStartPos];
         var summaryRowCount = 0;
-        if (arrFields[1].hasOwnProperty('summaryRowCount') && arrFields[1].summaryRowCount > 0)//if summary row specified
-            summaryRowCount = arrFields[1].summaryRowCount;
-        var arrRowEndIndex = [data.length];
-        while (arrRowStartIndex.length > 0) {
-            for (var c = 1; c < arrFields.length; c++) {
-                if (arrRowStartIndex[arrRowStartIndex.length - 1] >= arrRowEndIndex[arrRowEndIndex.length - 1]) {
-                    var tempStartIndex = arrRowStartIndex.pop();
-                    arrRowEndIndex.pop();
-                    var summaryRowCount = 0;
-                    if (arrFields[arrRowStartIndex.length].hasOwnProperty('summaryRowCount') && arrFields[arrRowStartIndex.length].summaryRowCount > 0)//if summary row specified
-                        summaryRowCount = arrFields[arrRowStartIndex.length].summaryRowCount;
-                    arrRowStartIndex[arrRowStartIndex.length - 1] = tempStartIndex + summaryRowCount;
-                    c -= 2;
-                    continue;
-                }
-                var isCollapsible = false;
-                if (arrFields[c].hasOwnProperty('collapsible') && arrFields[c].collapsible == true)
-                    isCollapsible = true;
+        if (grandTotal != undefined) {
+            if (grandTotal.aggregation.sum.display == true) summaryRowCount++;
+            if (grandTotal.aggregation.min.display == true) summaryRowCount++;
+            if (grandTotal.aggregation.max.display == true) summaryRowCount++;
+            if (grandTotal.aggregation.avg.display == true) summaryRowCount++;
+            if (grandTotal.aggregation.count.display == true) summaryRowCount++;
+            grandTotal.summaryRowCount = summaryRowCount;
+        }
 
-                if (isCollapsible) {
-                    var summaryRowCount = 0;
-                    if (arrFields[c].hasOwnProperty('summaryRowCount') && arrFields[c].summaryRowCount > 0)//if summary row specified
-                        summaryRowCount = arrFields[c].summaryRowCount;
-                    var isBreaked = false;
-                    for (var i = arrRowStartIndex[arrRowStartIndex.length - 1]; (i + summaryRowCount + 1) < arrRowEndIndex[arrRowEndIndex.length - 1]; i++) {
-                        var currentVal = data[i][arrFields[c].fieldRefNumber];
-                        var nextVal = data[i + summaryRowCount + 1][arrFields[c].fieldRefNumber];
-                        if (currentVal != nextVal) {
-                            if (i != arrRowStartIndex[arrRowStartIndex.length - 1] && options.repeatContent == false) {
-                                data[i][arrFields[c].fieldRefNumber] = '';
-                            }
-                            for (var tempI = 0; tempI < summaryRowCount; tempI++) {
-                                if (options.repeatContent == false)
-                                    data[i + tempI + 1][arrFields[c].fieldRefNumber] = '';
-                            }
+        for (var i = 0; i < dimensions.length - 1; i++) {
+            dimensions[i].collapsible = dimensions[i].collapsible != undefined ? dimensions[i].collapsible : collapsible;
+            dimensions[i].repeatContent = dimensions[i].repeatContent != undefined ? dimensions[i].repeatContent : repeatContent;
+            dimensions[i].summaryRowCount = 0;
+            if (showSummary == true) {
+                if (dimensions[i].summary.aggregation.sum.display == true) dimensions[i].summaryRowCount++;
+                if (dimensions[i].summary.aggregation.min.display == true) dimensions[i].summaryRowCount++;
+                if (dimensions[i].summary.aggregation.max.display == true) dimensions[i].summaryRowCount++;
+                if (dimensions[i].summary.aggregation.avg.display == true) dimensions[i].summaryRowCount++;
+                if (dimensions[i].summary.aggregation.count.display == true) dimensions[i].summaryRowCount++;
+            }
+        }
 
-                            data[arrRowStartIndex[arrRowStartIndex.length - 1]][arrFields[c].fieldRefNumber]['grouped_row_cnt'] = (i - arrRowStartIndex[arrRowStartIndex.length - 1]) + 1;
-                            data[arrRowStartIndex[arrRowStartIndex.length - 1]][arrFields[c].fieldRefNumber]['isCollapsed'] = false;
-                            data[arrRowStartIndex[arrRowStartIndex.length - 1]][arrFields[c].fieldRefNumber]['collapsible'] = true;
-                            arrRowStartIndex.push(arrRowStartIndex[arrRowStartIndex.length - 1]);
-                            arrRowEndIndex.push(i + 1);
-                            isBreaked = true;
-                            break;
-                        }
-                        else {
-                            if (i != arrRowStartIndex[arrRowStartIndex.length - 1] && options.repeatContent == false) {
-                                data[i][arrFields[c].fieldRefNumber] = '';
+        var arrSummaryRowsDet = axiomPivotHelper.prepareSummaryRow(data, dimensions, measures, grandTotal);
+        var arrSummaryRows = arrSummaryRowsDet.summaryRows;
+        var collapsedInfo = arrSummaryRowsDet.collapsedInfo;
+
+        var colInfo = [];
+        for (var i = 0; i < dimensions.length; i++) {
+            var info = {};
+            info.name = dimensions[i].fieldRefNumber;
+            info.width = 200;
+            colInfo.push(info);
+            info = null;
+        }
+        for (var i = 0; i < measures.length; i++) {
+            var info = {};
+            info.name = measures[i].fieldRefNumber;
+            info.width = 200;
+            colInfo.push(info);
+            info = null;
+        }
+
+        function processData() {
+            var icons = [];
+            var colData = JSON.parse(JSON.stringify(colInfo));
+            var rowData = [];
+            var latestCollapsedInfo = {};
+            var currSummaryRow = 0;
+            var rowIndex = 0;
+            for (var r = 0; r < data.length; r++) {
+                if (showSummary == true && currSummaryRow < arrSummaryRows.length && (r - 1 >= arrSummaryRows[currSummaryRow].rEndIndex)) {
+                    if (r - 1 == arrSummaryRows[currSummaryRow].rEndIndex) {
+                        rowData.push($.extend(true, {}, arrSummaryRows[currSummaryRow].row));
+                        if (repeatContent == false && arrSummaryRows[currSummaryRow].cIndex != undefined) {
+                            for (var cNext = 0; cNext < arrSummaryRows[currSummaryRow].cIndex; cNext++) {
+                                rowData[rowData.length - 1][colInfo[cNext].name] = "";
                             }
                         }
+                        rowIndex++;
                     }
-                    if (!isBreaked) {
-                        var numOfRows = (arrRowEndIndex[arrRowEndIndex.length - 1] - arrRowStartIndex[arrRowStartIndex.length - 1]) - summaryRowCount;
-                        for (var tempI = 0; tempI < summaryRowCount + (numOfRows > 1 ? 1 : 0); tempI++) {
-                            if (options.repeatContent == false)
-                                data[arrRowEndIndex[arrRowEndIndex.length - 1] - (tempI + 1)][arrFields[c].fieldRefNumber] = '';
-                        }
-                        if (i < data.length - 1) {
-                            data[arrRowStartIndex[arrRowStartIndex.length - 1]][arrFields[c].fieldRefNumber]['grouped_row_cnt'] = numOfRows;
-                            data[arrRowStartIndex[arrRowStartIndex.length - 1]][arrFields[c].fieldRefNumber]['isCollapsed'] = false;
-                            data[arrRowStartIndex[arrRowStartIndex.length - 1]][arrFields[c].fieldRefNumber]['collapsible'] = true;
-                        }
-                        arrRowStartIndex.push(arrRowStartIndex[arrRowStartIndex.length - 1]);
-                        var summaryRowCount = 0;
-                        if (arrFields[arrRowEndIndex.length].hasOwnProperty('summaryRowCount') && arrFields[arrRowEndIndex.length].summaryRowCount > 0)//if summary row specified
-                            summaryRowCount = arrFields[arrRowEndIndex.length].summaryRowCount;
-                        arrRowEndIndex.push(arrRowEndIndex[arrRowEndIndex.length - 1] - summaryRowCount);
-                    }
+                    currSummaryRow++;
+                    r--;
                 }
                 else {
-                    if (arrRowStartIndex.length > 1) {
-                        arrRowStartIndex.pop();
-                        var summaryRowCount = 0;
-                        if (arrFields[arrRowStartIndex.length].hasOwnProperty('summaryRowCount') && arrFields[arrRowStartIndex.length].summaryRowCount > 0)//if summary row specified
-                            summaryRowCount = arrFields[arrRowStartIndex.length].summaryRowCount;
-                        c = arrRowStartIndex.length - 1;
-                        arrRowStartIndex[arrRowStartIndex.length - 1] = arrRowEndIndex.pop() + summaryRowCount;
+                    if (collapsedInfo[r] != undefined) {
+                        latestCollapsedInfo = collapsedInfo[r];
+                        var added = false;
+                        for (var c = 0; c < dimensions.length - 1; c++) {
+                            if (collapsedInfo[r][colData[c].name] != undefined) {
+                                icons.push({ id: rowIndex + '_' + c, row: (rowIndex + 1), col: (c + 1), data: { r: r, c: c} });
+                                if (collapsedInfo[r][colData[c].name].isCollapsed) {
+                                    rowData.push($.extend(true, {}, data[r]));
+                                    if (repeatContent == false) {
+                                        for (var cNext = 0; cNext < c; cNext++) {
+                                            if (!latestCollapsedInfo.hasOwnProperty(colInfo[cNext].name))
+                                                rowData[rowData.length - 1][colInfo[cNext].name] = "";
+                                        }
+                                    }
+                                    for (var cNext = c + 1; cNext < colInfo.length; cNext++) {
+                                        rowData[rowData.length - 1][colInfo[cNext].name] = "";
+                                    }
+                                    rowIndex++;
+                                    added = true;
+                                    //debugger;
+                                    r += (collapsedInfo[r][colData[c].name].rEndIndex - collapsedInfo[r][colData[c].name].rStartIndex);
+                                    while (showSummary == true && currSummaryRow < arrSummaryRows.length && (r >= arrSummaryRows[currSummaryRow].rEndIndex)) {
+                                        if (r == arrSummaryRows[currSummaryRow].rEndIndex && arrSummaryRows[currSummaryRow].cIndex <= c) {
+                                            rowData.push($.extend(true, {}, arrSummaryRows[currSummaryRow].row));
+                                            if (repeatContent == false) {
+                                                for (var cNext = 0; cNext < c; cNext++) {
+                                                    if (arrSummaryRows[currSummaryRow].cIndex == c)
+                                                        rowData[rowData.length - 1][colInfo[cNext].name] = "";
+                                                }
+                                            }
+                                            rowIndex++;
+                                        }
+                                        currSummaryRow++;
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                        if (!added) {
+                            rowData.push($.extend(true, {}, data[r]));
+                            if (repeatContent == false) {
+                                for (var c = 0; c < dimensions.length - 1; c++) {
+                                    if (!latestCollapsedInfo.hasOwnProperty(colData[c].name)) {
+                                        rowData[rowData.length - 1][colData[c].name] = "";
+                                    }
+                                }
+                            }
+                            rowIndex++;
+                        }
                     }
                     else {
-                        arrRowStartIndex = [];
-                        arrRowEndIndex = [];
-                        break;
+                        rowData.push($.extend(true, {}, data[r]));
+                        if (repeatContent == false) {
+                            for (var c = 0; c < dimensions.length - 1; c++) {
+                                rowData[rowData.length - 1][colData[c].name] = "";
+                            }
+                        }
+                        rowIndex++;
                     }
                 }
             }
+
+            while (showSummary == true && currSummaryRow < arrSummaryRows.length) {
+                rowData.push($.extend(true, {}, arrSummaryRows[currSummaryRow].row));
+                if (repeatContent == false && arrSummaryRows[currSummaryRow].cIndex != undefined) {
+                    for (var cNext = 0; cNext < arrSummaryRows[currSummaryRow].cIndex; cNext++) {
+                        rowData[rowData.length - 1][colInfo[cNext].name] = "";
+                    }
+                }
+                currSummaryRow++;
+            }
+
+            var rowInfo = [];
+            for (var row = 0; row < rowData.length; row++) {
+                var info = { height: 24 };
+                for (var col = 0; col < colInfo.length; col++) {
+                    info[colInfo[col].name] = {};
+                    info[colInfo[col].name].value = "     " + rowData[row][colInfo[col].name].toString();
+                    info[colInfo[col].name].formatting = {};
+                    var formatting = JSON.parse(rowData[row]['formatting']);
+                    if (formatting[colInfo[col].name] && formatting[colInfo[col].name].bgColor)
+                        info[colInfo[col].name].formatting.background = formatting[colInfo[col].name].bgColor;
+                    if (formatting[colInfo[col].name] && formatting[colInfo[col].name].foreColor)
+                        info[colInfo[col].name].formatting.color = formatting[colInfo[col].name].foreColor;
+                }
+                rowInfo.push(info);
+            }
+            options.cb(colInfo, rowInfo, icons, collapsedInfo, processData);
         }
+        processData();
     }
+
 }

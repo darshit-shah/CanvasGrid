@@ -29,6 +29,18 @@
                 console.log('error in removeCellSelector');
             else
                 return ele.data('objCanvasGrid').removeCellSelector(key);
+        },
+        setItem: function (ele, key, item, row, col) {
+            if (ele.data('objCanvasGrid') == undefined)
+                console.log('error in setItem');
+            else
+                return ele.data('objCanvasGrid').setItem(key, item, row, col);
+        },
+        updateData: function (ele, data) {
+            if (ele.data('objCanvasGrid') == undefined)
+                console.log('error in updateData');
+            else
+                return ele.data('objCanvasGrid').updateData(data);
         }
     }
     var CanvasGrid = function (ele, options) {
@@ -88,6 +100,8 @@
 
         var cellSelectors = {};
         var cellSelectorsVisible = {};
+
+        var anotatedItems = {};
 
         var cellEditor;
         var cellEditorSizes;
@@ -566,11 +580,11 @@
         var freezePan = function (r, c) {
             r = r + 1;
             c = c + 1;
-            if (rowStartIndex != 0 || rowStartIndex != 0) {
+            if (rowStartIndex != 0 || colStartIndex != 0) {
                 alert('Freeze can be applied only if first row or first column is visible');
             }
             if (r != undefined) {
-                if (r > rowEndIndex) {
+                if (r > rowEndIndex && rowEndIndex > -1) {
                     alert('Freeze can be applied only to visible cell');
                 }
                 else {
@@ -583,7 +597,7 @@
                 }
             }
             if (c != undefined) {
-                if (c > colEndIndex) {
+                if (c > colEndIndex && colEndIndex > -1) {
                     alert('Freeze can be applied only to visible cell');
                 }
                 else {
@@ -623,12 +637,67 @@
 
             mainEvents = ele.find('.mainEvents');
 
-            canvas = document.getElementById("mainAxiomCanvas");
+            canvas = ele.find("#mainAxiomCanvas")[0];
             gContext = canvas.getContext('2d');
 
+            rowStartIndex = freezeRowIndex;
+            colStartIndex = freezeColIndex;
             updateScrollBars();
 
-            drawCanvas();
+            //drawCanvas();
+        }
+
+        var updateAnotatedItemPositions = function () {
+            if (rowStartIndex == -1 || rowEndIndex == -1 || colStartIndex == -1 || colEndIndex == -1)
+                return;
+            var keys = Object.keys(anotatedItems);
+            for (var iSelector = 0; iSelector < keys.length; iSelector++) {
+                selectorIndex = keys[iSelector];
+                var y0, y1, x0, x1;
+                var y = 0;
+                var x = 0;
+                if ((anotatedItems[selectorIndex].row < freezeRowIndex || rowStartIndex <= anotatedItems[selectorIndex].row && rowEndIndex >= anotatedItems[selectorIndex].row) && (anotatedItems[selectorIndex].col < freezeColIndex || colStartIndex <= anotatedItems[selectorIndex].col && colEndIndex >= anotatedItems[selectorIndex].col)) {//No scroll needed
+                    var y = 0;
+                    var x = 0;
+                    for (var i = 0; i < anotatedItems[selectorIndex].row; i++) {
+                        if (i >= freezeRowIndex && i < rowStartIndex) {
+                            i = rowStartIndex;
+                            if (rowStartIndex == anotatedItems[selectorIndex].row)
+                                break;
+                        }
+                        y += data[i].height;
+                    }
+                    y0 = y;
+                    y1 = y + data[anotatedItems[selectorIndex].row].height;
+                    for (var i = 0; i < anotatedItems[selectorIndex].col; i++) {
+                        if (i >= freezeColIndex && i < colStartIndex) {
+                            i = colStartIndex;
+                            if (colStartIndex == anotatedItems[selectorIndex].col)
+                                break;
+                        }
+                        x += colInfo[i].width;
+                    }
+                    x0 = x;
+                    x1 = x + anotatedItems[selectorIndex].col.width;
+
+                    if (anotatedItems[selectorIndex].visible == false) {
+                        anotatedItems[selectorIndex].visible = true;
+                        anotatedItems[selectorIndex].item.show();
+
+                    }
+
+                    anotatedItems[selectorIndex].item
+                        .css('left', x0 + 'px');
+                    anotatedItems[selectorIndex].item
+                        .css('top', function (x) {
+                            return (y0 + ((y1 - (y0)) / 2)) + 'px';
+                        });
+                }
+                else {
+                    anotatedItems[selectorIndex].visible = false;
+                    anotatedItems[selectorIndex].item.hide();
+                }
+            }
         }
 
         var selectCell = function (triggerChange) {
@@ -706,36 +775,37 @@
 
 
                     if (selectedRowStartIndex[selectorIndex] <= selectedRowEndIndex[selectorIndex] && selectedColStartIndex[selectorIndex] <= selectedColEndIndex[selectorIndex])
-                        updateCellSelectorPosition(selectedStartBox[selectorIndex].x0, selectedStartBox[selectorIndex].y0, selectedEndBox[selectorIndex].x1, selectedEndBox[selectorIndex].y1, selectorIndex);
+                        updateCellSelectorPosition(selectedStartBox[selectorIndex].x0, selectedStartBox[selectorIndex].y0, selectedEndBox[selectorIndex].x1, selectedEndBox[selectorIndex].y1, selectorIndex, triggerChange);
                     else if (selectedRowStartIndex[selectorIndex] <= selectedRowEndIndex[selectorIndex] && selectedColStartIndex[selectorIndex] > selectedColEndIndex[selectorIndex])
-                        updateCellSelectorPosition(selectedEndBox[selectorIndex].x0, selectedStartBox[selectorIndex].y0, selectedStartBox[selectorIndex].x1, selectedEndBox[selectorIndex].y1, selectorIndex);
+                        updateCellSelectorPosition(selectedEndBox[selectorIndex].x0, selectedStartBox[selectorIndex].y0, selectedStartBox[selectorIndex].x1, selectedEndBox[selectorIndex].y1, selectorIndex, triggerChange);
                     else if (selectedRowStartIndex[selectorIndex] > selectedRowEndIndex[selectorIndex] && selectedColStartIndex[selectorIndex] <= selectedColEndIndex[selectorIndex])
-                        updateCellSelectorPosition(selectedStartBox[selectorIndex].x0, selectedEndBox[selectorIndex].y0, selectedEndBox[selectorIndex].x1, selectedStartBox[selectorIndex].y1, selectorIndex);
+                        updateCellSelectorPosition(selectedStartBox[selectorIndex].x0, selectedEndBox[selectorIndex].y0, selectedEndBox[selectorIndex].x1, selectedStartBox[selectorIndex].y1, selectorIndex, triggerChange);
                     else
-                        updateCellSelectorPosition(selectedEndBox[selectorIndex].x0, selectedEndBox[selectorIndex].y0, selectedStartBox[selectorIndex].x1, selectedStartBox[selectorIndex].y1, selectorIndex);
+                        updateCellSelectorPosition(selectedEndBox[selectorIndex].x0, selectedEndBox[selectorIndex].y0, selectedStartBox[selectorIndex].x1, selectedStartBox[selectorIndex].y1, selectorIndex, triggerChange);
                 }
                 else {
-                    if (false && selectorIndex == options.MyKey) {
+                    //console.log(lastScrollTop, lastScrollTopAdj, vScroll.scrollTop());
+                    if (selectorIndex == options.MyKey && (triggerChange != false)) {
                         var updateYScroll = false;
                         var updateXScroll = false;
                         if (rowEndIndex < selectedRowEndIndex[selectorIndex]) {//scroll down
                             var probableNewRowStart = selectedRowEndIndex[selectorIndex];
-                            y = 0;
-                            for (var i = selectedRowEndIndex[selectorIndex]; i >= freezeRowIndex; i--) {
-                                if ((y + data[i].height) > (canvasHeight - freezeY))
-                                    break;
-                                probableNewRowStart = i;
-                                y += data[i].height;
-                            }
-                            y = vScroll.scrollTop();
-                            for (var i = rowStartIndex; i < probableNewRowStart; i++) {
+                            //                            y = 0;
+                            //                            for (var i = selectedRowEndIndex[selectorIndex]; i >= freezeRowIndex; i--) {
+                            //                                if ((y + data[i].height) > (canvasHeight - freezeY))
+                            //                                    break;
+                            //                                probableNewRowStart = i;
+                            //                                y += data[i].height;
+                            //                            }
+                            y = vScroll.scrollTop() + lastScrollTopAdj;
+                            for (var i = rowEndIndex + 1; i <= probableNewRowStart; i++) {
                                 y += data[i].height;
                             }
                             updateYScroll = true;
                         }
-                        else if (rowStartIndex > selectedRowEndIndex[selectorIndex]) {//scroll up
-                            var probableNewRowStart = selectedRowEndIndex[selectorIndex];
-                            y = vScroll.scrollTop();
+                        else if (rowStartIndex > selectedRowStartIndex[selectorIndex]) {//scroll up
+                            var probableNewRowStart = selectedRowStartIndex[selectorIndex];
+                            y = vScroll.scrollTop() + lastScrollTopAdj;
                             for (var i = rowStartIndex - 1; i >= probableNewRowStart; i--) {
                                 y -= data[i].height;
                             }
@@ -745,20 +815,20 @@
                         if (colEndIndex < selectedColEndIndex[selectorIndex]) {//scroll right
                             var probableNewColStart = selectedColEndIndex[selectorIndex];
                             x = 0;
-                            for (var i = selectedColEndIndex[selectorIndex]; i >= freezeColIndex; i--) {
-                                if ((x + colInfo[i].width) > (canvasWidth - freezeX))
-                                    break;
-                                probableNewColStart = i;
-                                x += colInfo[i].width;
-                            }
+                            //                            for (var i = selectedColEndIndex[selectorIndex]; i >= freezeColIndex; i--) {
+                            //                                if ((x + colInfo[i].width) > (canvasWidth - freezeX))
+                            //                                    break;
+                            //                                probableNewColStart = i;
+                            //                                x += colInfo[i].width;
+                            //                            }
                             x = hScroll.scrollLeft();
                             for (var i = colStartIndex; i < probableNewColStart; i++) {
                                 x += colInfo[i].width;
                             }
                             updateXScroll = true;
                         }
-                        else if (colStartIndex > selectedColEndIndex[selectorIndex]) {//scroll left
-                            var probableNewColStart = selectedColEndIndex[selectorIndex];
+                        else if (colStartIndex > selectedColStartIndex[selectorIndex]) {//scroll left
+                            var probableNewColStart = selectedColStartIndex[selectorIndex];
                             x = hScroll.scrollLeft();
                             for (var i = colStartIndex - 1; i >= probableNewColStart; i--) {
                                 x -= colInfo[i].width;
@@ -781,42 +851,47 @@
                     }
                 }
             }
+            updateAnotatedItemPositions();
         }
 
-        var updateCellSelectorPosition = function (x, y, x1, y1, key) {
+        var updateCellSelectorPosition = function (x, y, x1, y1, key, triggerChange) {
             if (key == undefined)
                 key = options.MyKey;
             if (x == -1) {
                 if (cellSelectorsVisible[key] == true) {
-                    d3.select(cellSelectors[key][0])
-                            .transition()
-                            .duration(isDragStart == true ? 0 : 100)
-                            .style('left', '-10px')
-                            .style('top', '-10px')
-                            .style('width', '0px')
-                            .style('height', '0px')
-                            ;
+                    //                    d3.select(cellSelectors[key][0])
+                    //                            .transition()
+                    //                            .duration(isDragStart == true ? 0 : 100)
+                    //                            .style('left', '-10px')
+                    //                            .style('top', '-10px')
+                    //                            .style('width', '0px')
+                    //                            .style('height', '0px')
+                    //                            ;
+                    cellSelectors[key].hide();
                     cellSelectorsVisible[key] = false;
                 }
             }
             else {
                 if (cellSelectorsVisible[key] == false) {
-                    cellSelectors[key].show();
-                    cellSelectors[key].css('left', x);
-                    cellSelectors[key].css('top', y);
-                    cellSelectors[key].css('width', 0);
-                    cellSelectors[key].css('height', 0);
+                    cellSelectors[key].show()
+                        .css('left', x)
+                        .css('top', y)
+                        .css('width', (x1 - x) + 'px')
+                        .css('height', (y1 - y) + 'px')
+                        ;
+
                     cellSelectorsVisible[key] = true;
                 }
-
-                d3.select(cellSelectors[key][0])
+                else {
+                    d3.select(cellSelectors[key][0])
                         .transition()
-                        .duration(isDragStart == true ? 0 : 100)
+                        .duration(isDragStart == true || triggerChange == false ? 0 : 100)
                         .style('left', x + 'px')
                         .style('top', y + 'px')
                         .style('width', (x1 - x) + 'px')
                         .style('height', (y1 - y) + 'px')
                         ;
+                }
             }
             if (key == options.MyKey) {
                 updateCellEditorPosition(x, y, x1, y1);
@@ -1003,8 +1078,8 @@
             hScroll.scrollLeft(hScrollPos);
             vScroll.scrollTop(vScrollPos);
             if (totalWidth < hScroll.width() || totalHeight < vScroll.height()) {
-                rowStartIndex = freezeRowIndex;
-                colStartIndex = freezeColIndex;
+                //rowStartIndex = freezeRowIndex;
+                //colStartIndex = freezeColIndex;
                 drawCanvas();
             }
         }
@@ -1019,11 +1094,10 @@
 
             var lastRowStartIndex = rowStartIndex;
             var lastColStartIndex = colStartIndex;
-
             if ((lastScrollTop - lastScrollTopAdj) > vScroll.scrollTop()) {
                 /*scroll up*/
                 while (rowStartIndex > 0) {
-                    if (lastScrollTop > vScroll.scrollTop()) {
+                    if (lastScrollTop - (lastScrollTopAdj > 0 ? lastScrollTopAdj : 0) > vScroll.scrollTop()) {
                         lastScrollTop -= data[rowStartIndex].height;
                         rowStartIndex--;
                     }
@@ -1044,25 +1118,14 @@
                     }
                 }
             }
-            lastScrollTopAdj = lastScrollTop - vScroll.scrollTop();
-
-            //            rowStartIndex = 0;
-            //            var newScrollTop = 0;
-            //            while (rowStartIndex < numRows) {
-            //                if (newScrollTop < vScroll.scrollTop()) {
-            //                    newScrollTop += data[rowStartIndex].height;
-            //                    rowStartIndex++;
-            //                }
-            //                else {
-            //                    break;
-            //                }
-            //            }
-
+            //console.log(lastScrollTopAdj);
+            lastScrollTopAdj = (lastScrollTop) - vScroll.scrollTop();
+            //console.log(lastScrollTopAdj, lastScrollTop, vScroll.scrollTop());
 
             if ((lastScrollLeft - lastScrollLeftAdj) > hScroll.scrollLeft()) {
                 /*scroll left*/
                 while (colStartIndex > 0) {
-                    if (lastScrollLeft > hScroll.scrollLeft()) {
+                    if (lastScrollLeft - (lastScrollLeftAdj > 0 ? lastScrollLeftAdj : 0) > hScroll.scrollLeft()) {
                         lastScrollLeft -= colInfo[colStartIndex].width;
                         colStartIndex--;
                     }
@@ -1084,18 +1147,6 @@
                 }
             }
             lastScrollLeftAdj = lastScrollLeft - hScroll.scrollLeft();
-
-            //            colStartIndex = 0;
-            //            lastScrollLeft = 0;
-            //            while (colStartIndex < numCols) {
-            //                if (lastScrollLeft < hScroll.scrollLeft()) {
-            //                    lastScrollLeft += colInfo[colStartIndex].width;
-            //                    colStartIndex++;
-            //                }
-            //                else {
-            //                    break;
-            //                }
-            //            }
 
             if (lastRowStartIndex != rowStartIndex || lastColStartIndex != colStartIndex) {
                 //console.log(lastRowStartIndex, rowStartIndex, lastColStartIndex, colStartIndex);
@@ -1391,45 +1442,12 @@
                             c = null;
                             context = null;
                             globalResized = globalResized || resized;
-                            //                            if (resized) {
-                            //                                drawCanvas();
-                            //                                return;
-                            //                            }
                         }
                         else {
                             var resized = drawCell(gContext, x0 - extraWidthNeg, y0 - extraHeightNeg, x1 + extraWidth, y1 + extraHeight, i - dataObj.formatting.rowSpanNeg, j - dataObj.formatting.colSpanNeg);
                             globalResized = globalResized || resized;
-                            //                            if (resized) {
-                            //                                drawCanvas();
-                            //                                return;
-                            //                            }
                         }
                     }
-
-                    //                    if (selectedRowStartIndex[options.MyKey] == i && selectedColStartIndex[options.MyKey] == j) {
-                    //                        localCellSelectorVisible = true;
-                    //                    }
-                    //                    else if (selectedRowEndIndex[options.MyKey] == i && selectedColEndIndex[options.MyKey] == j) {
-                    //                        localCellSelectorVisible = true;
-                    //                    }
-
-                    //                    if (selectedColStartIndex[options.MyKey] == j) {
-                    //                        selectedStartBox[options.MyKey].x0 = x0;
-                    //                        selectedStartBox[options.MyKey].x1 = x1 - cellSelectorBorder * 2;
-                    //                    }
-                    //                    if (selectedRowStartIndex[options.MyKey] == i) {
-                    //                        selectedStartBox[options.MyKey].y0 = y0;
-                    //                        selectedStartBox[options.MyKey].y1 = y1 - cellSelectorBorder * 2;
-                    //                    }
-                    //                    if (selectedColEndIndex[options.MyKey] == j) {
-                    //                        selectedEndBox[options.MyKey].x0 = x0;
-                    //                        selectedEndBox[options.MyKey].x1 = x1 - cellSelectorBorder * 2;
-                    //                    }
-                    //                    if (selectedRowEndIndex[options.MyKey] == i) {
-                    //                        selectedEndBox[options.MyKey].y0 = y0;
-                    //                        selectedEndBox[options.MyKey].y1 = y1 - cellSelectorBorder * 2;
-                    //                    }
-
                     canvasWidthAdj = x1 - canvasWidth;
                     if (x1 > canvasWidth) {
                         colEndIndex--;
@@ -1442,106 +1460,11 @@
                     break;
                 }
             }
-
-            //            if (selectedRowStartIndex[options.MyKey] >= freezeRowIndex && selectedRowEndIndex[options.MyKey] >= freezeRowIndex && selectedRowStartIndex[options.MyKey] < rowStartIndex && selectedRowEndIndex[options.MyKey] < rowStartIndex) {
-            //            }
-            //            else if (selectedRowStartIndex[options.MyKey] > rowEndIndex && selectedRowEndIndex[options.MyKey] > rowEndIndex) {
-            //            }
-            //            else if (selectedColStartIndex[options.MyKey] >= freezeColIndex && selectedColEndIndex[options.MyKey] >= freezeColIndex && selectedColStartIndex[options.MyKey] < colStartIndex && selectedColEndIndex[options.MyKey] < colStartIndex) {
-            //            }
-            //            else if (selectedColStartIndex[options.MyKey] > colEndIndex && selectedColEndIndex[options.MyKey] > colEndIndex) {
-            //            }
-            //            else {
-            //                if (selectedRowStartIndex[options.MyKey] < freezeRowIndex && selectedRowEndIndex[options.MyKey] >= freezeRowIndex && selectedRowEndIndex[options.MyKey] < rowStartIndex) {
-            //                    selectedEndBox[options.MyKey].y0 = freezeY;
-            //                    selectedEndBox[options.MyKey].y1 = freezeY;
-            //                    localCellSelectorVisible = true;
-            //                }
-
-            //                if (selectedRowEndIndex[options.MyKey] < freezeRowIndex && selectedRowStartIndex[options.MyKey] >= freezeRowIndex) {
-            //                    selectedStartBox[options.MyKey].y0 = freezeY;
-            //                    selectedStartBox[options.MyKey].y1 = freezeY;
-            //                    localCellSelectorVisible = true;
-            //                }
-            //                if (selectedColStartIndex[options.MyKey] < freezeColIndex && selectedColEndIndex[options.MyKey] >= freezeColIndex && selectedColEndIndex[options.MyKey] < colStartIndex) {
-            //                    selectedEndBox[options.MyKey].x0 = freezeX;
-            //                    selectedEndBox[options.MyKey].x1 = freezeX;
-            //                    localCellSelectorVisible = true;
-            //                }
-
-            //                if (selectedColEndIndex[options.MyKey] < freezeColIndex && selectedColStartIndex[options.MyKey] >= freezeColIndex) {
-            //                    selectedStartBox[options.MyKey].x0 = freezeX;
-            //                    selectedStartBox[options.MyKey].x1 = freezeX;
-            //                    localCellSelectorVisible = true;
-            //                }
-
-            //                if (selectedRowStartIndex[options.MyKey] >= freezeRowIndex && selectedRowStartIndex[options.MyKey] < rowStartIndex && selectedRowEndIndex[options.MyKey] >= rowStartIndex) {
-            //                    selectedStartBox[options.MyKey].y0 = freezeY;
-            //                    selectedStartBox[options.MyKey].y1 = freezeY;
-            //                    localCellSelectorVisible = true;
-            //                }
-
-            //                if (selectedRowStartIndex[options.MyKey] > rowEndIndex && selectedRowEndIndex[options.MyKey] <= rowEndIndex) {
-            //                    selectedStartBox[options.MyKey].y0 = canvasHeight;
-            //                    selectedStartBox[options.MyKey].y1 = canvasHeight;
-            //                    localCellSelectorVisible = true;
-            //                }
-
-            //                if (selectedRowEndIndex[options.MyKey] >= freezeRowIndex && selectedRowEndIndex[options.MyKey] < rowStartIndex && selectedRowStartIndex[options.MyKey] >= rowStartIndex) {
-            //                    selectedEndBox[options.MyKey].y1 = freezeY;
-            //                    selectedEndBox[options.MyKey].y0 = freezeY;
-            //                    localCellSelectorVisible = true;
-            //                }
-
-            //                if (selectedRowEndIndex[options.MyKey] > rowEndIndex && selectedRowStartIndex[options.MyKey] <= rowEndIndex) {
-            //                    selectedEndBox[options.MyKey].y0 = canvasHeight;
-            //                    selectedEndBox[options.MyKey].y1 = canvasHeight;
-            //                    localCellSelectorVisible = true;
-            //                }
-
-            //                if (selectedColStartIndex[options.MyKey] >= freezeColIndex && selectedColStartIndex[options.MyKey] < colStartIndex && selectedColEndIndex[options.MyKey] >= colStartIndex) {
-            //                    selectedStartBox[options.MyKey].x0 = freezeX;
-            //                    selectedStartBox[options.MyKey].x1 = freezeX;
-            //                    localCellSelectorVisible = true;
-            //                }
-
-            //                if (selectedColStartIndex[options.MyKey] > colEndIndex && selectedColEndIndex[options.MyKey] <= colEndIndex) {
-            //                    selectedStartBox[options.MyKey].x0 = canvasWidth;
-            //                    selectedStartBox[options.MyKey].x1 = canvasWidth;
-            //                    localCellSelectorVisible = true;
-            //                }
-
-            //                if (selectedColEndIndex[options.MyKey] >= freezeColIndex && selectedColEndIndex[options.MyKey] < colStartIndex && selectedColStartIndex[options.MyKey] >= colStartIndex) {
-            //                    selectedEndBox[options.MyKey].x1 = freezeX;
-            //                    selectedEndBox[options.MyKey].x0 = freezeX;
-            //                    localCellSelectorVisible = true;
-            //                }
-
-            //                if (selectedColEndIndex[options.MyKey] > colEndIndex && selectedColStartIndex[options.MyKey] <= colEndIndex) {
-            //                    selectedEndBox[options.MyKey].x0 = canvasWidth;
-            //                    selectedEndBox[options.MyKey].x1 = canvasWidth;
-            //                    localCellSelectorVisible = true;
-            //                }
-            //            }
-
-            //            if (!localCellSelectorVisible) {
-            //                updateCellSelectorPosition(-1, -1, -1, -1, options.MyKey);
-            //            }
-            //            else {
-            //                if (selectedRowStartIndex[options.MyKey] <= selectedRowEndIndex[options.MyKey] && selectedColStartIndex[options.MyKey] <= selectedColEndIndex[options.MyKey])
-            //                    updateCellSelectorPosition(selectedStartBox[options.MyKey].x0, selectedStartBox[options.MyKey].y0, selectedEndBox[options.MyKey].x1, selectedEndBox[options.MyKey].y1);
-            //                else if (selectedRowStartIndex[options.MyKey] <= selectedRowEndIndex[options.MyKey] && selectedColStartIndex[options.MyKey] > selectedColEndIndex[options.MyKey])
-            //                    updateCellSelectorPosition(selectedEndBox[options.MyKey].x0, selectedStartBox[options.MyKey].y0, selectedStartBox[options.MyKey].x1, selectedEndBox[options.MyKey].y1);
-            //                else if (selectedRowStartIndex[options.MyKey] > selectedRowEndIndex[options.MyKey] && selectedColStartIndex[options.MyKey] <= selectedColEndIndex[options.MyKey])
-            //                    updateCellSelectorPosition(selectedStartBox[options.MyKey].x0, selectedEndBox[options.MyKey].y0, selectedEndBox[options.MyKey].x1, selectedStartBox[options.MyKey].y1);
-            //                else
-            //                    updateCellSelectorPosition(selectedEndBox[options.MyKey].x0, selectedEndBox[options.MyKey].y0, selectedStartBox[options.MyKey].x1, selectedStartBox[options.MyKey].y1);
-            //            }
             if (globalResized) {
                 drawCanvas();
             }
             else {
-                selectCell();
+                selectCell(false);
                 setTimeout(function () {
                     drawLock = false;
                 }, 0);
@@ -1623,6 +1546,35 @@
 
         this.getSelectedCell = function () {
             return data[selectedRowEndIndex[options.MyKey]][colInfo[selectedColEndIndex[options.MyKey]].name];
+        }
+
+        this.setItem = function (key, item, row, col) {
+            if (anotatedItems[key] != undefined) {
+                anotatedItems[key].item.remove();
+                delete anotatedItems[key];
+            }
+            anotatedItems[key] = { item: item, row: row, col: col, visible: false };
+            anotatedItems[key].item.css("position", "absolute");
+            anotatedItems[key].item.show();
+            anotatedItems[key].item.css('left', -100);
+            anotatedItems[key].item.css('top', -100);
+            mainEvents.append(anotatedItems[key].item);
+            setTimeout(function () {
+                updateAnotatedItemPositions();
+            }, 0);
+        }
+
+        this.updateData = function (localData) {
+            data.splice(1, data.length - 1);
+            data = data.concat(localData);
+            numRows = data.length;
+            var keys = Object.keys(anotatedItems);
+            for (var i = 0; i < keys.length; i++) {
+                anotatedItems[keys[i]].item.remove();
+                delete anotatedItems[keys[i]];
+            }
+            processData();
+            updateScrollBars();
         }
 
         init();

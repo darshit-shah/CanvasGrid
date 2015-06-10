@@ -4,6 +4,40 @@
         var arrSummaryRows = [];
         var collapsedInfo = {};
 
+        if (dimensions.length > 0) {
+            for (var i = 0; i < data.length; i++) {
+                for (var j = i + 1; j < data.length; j++) {
+                    var a = data[i];
+                    var b = data[j];
+
+                    var change = false;
+                    for (var d = 0; d < dimensions.length; d++) {
+                        if (a[dimensions[d].fieldRefNumber] == null) {
+                            change = false;
+                            break;
+                        }
+                        else if (b[dimensions[d].fieldRefNumber] == null) {
+                            change = true;
+                            break;
+                        }
+                        else if (a[dimensions[d].fieldRefNumber].toString() < b[dimensions[d].fieldRefNumber].toString()) {
+                            change = false;
+                            break;
+                        }
+                        else if (a[dimensions[d].fieldRefNumber].toString() > b[dimensions[d].fieldRefNumber].toString()) {
+                            change = true;
+                            break;
+                        }
+                    }
+                    if (change) {
+                        var temp = data[i];
+                        data[i] = data[j];
+                        data[j] = temp;
+                    }
+                }
+            }
+        }
+
         //table level summary
         var objTablewiseMeasureSummary = {};
         objTablewiseMeasureSummary['rEndIndex'] = 0;
@@ -109,6 +143,8 @@
                                         (tempArrSummary.aggregation[aggrKeys[k]].prefixSummaryTitle != undefined && tempArrSummary.aggregation[aggrKeys[k]].prefixSummaryTitle == false)
                                         ? tempArrSummary.aggregation[aggrKeys[k]].summaryTitle
                                         : currentRow[dimensions[d].fieldRefNumber] + ' ' + tempArrSummary.aggregation[aggrKeys[k]].summaryTitle;
+                                if (tempRow.formatting == undefined)
+                                    tempRow.formatting = "{}";
                                 var rowFormatting = JSON.parse(tempRow.formatting);
                                 for (var mm = 0; mm < measures.length; mm++) {
                                     var summaryVal = '-';
@@ -176,6 +212,8 @@
                     if (grandtotal.aggregation[aggrKeys[k]].hasOwnProperty('decimalPlaces'))
                         decimalPlaces = grandtotal.aggregation[aggrKeys[k]].decimalPlaces;
                     tempRow[dimensions[dimensions.length - 1].fieldRefNumber] = grandtotal.aggregation[aggrKeys[k]].summaryTitle;
+                    if (tempRow.formatting == undefined)
+                        tempRow.formatting = "{}";
                     var rowFormatting = JSON.parse(tempRow.formatting);
                     for (var mm = 0; mm < measures.length; mm++) {
                         var summaryVal = '-';
@@ -196,7 +234,7 @@
                     }
                     tempRow.formatting = JSON.stringify(rowFormatting);
                     objSummaryRow.row = tempRow;
-                    if (position && position == 'top') {
+                    if (position == 'top') {
                         objSummaryRow.rEndIndex = -1;
                         arrSummaryRows.splice(0, 0, objSummaryRow); //insert at top
                     }
@@ -359,8 +397,12 @@
                 var info = { height: 24 };
                 for (var col = 0; col < colInfo.length; col++) {
                     info[colInfo[col].name] = {};
+                    if (rowData[row][colInfo[col].name] == undefined)
+                        rowData[row][colInfo[col].name] = "";
                     info[colInfo[col].name].value = "     " + rowData[row][colInfo[col].name].toString();
                     info[colInfo[col].name].formatting = {};
+                    if (rowData[row]['formatting'] == undefined)
+                        rowData[row]['formatting'] = "{}";
                     var formatting = JSON.parse(rowData[row]['formatting']);
                     if (formatting[colInfo[col].name] && formatting[colInfo[col].name].bgColor)
                         info[colInfo[col].name].formatting.background = formatting[colInfo[col].name].bgColor;

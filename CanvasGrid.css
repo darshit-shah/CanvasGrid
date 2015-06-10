@@ -31,13 +31,13 @@
 .cellSelector
 {
     position:absolute;
+    box-sizing: content-box;
 }
 
 .cellEditor
 {
     position:absolute;
     background-color: #fff;
-    border: 2px solid green;
     font-size: 15px;
     font-family: Calibri;
     cursor: default;
@@ -45,12 +45,9 @@
     overflow-x: hidden;
     overflow-y: auto;
     outline:none;
-    padding:2px;
-    padding-top:0px;
-    padding-bottom:0px;
-    padding-left:3px;
-    padding-left:3px;
     color: Black;
+    padding:2px;
+    box-sizing: content-box;
 }
 
 .mainEvents

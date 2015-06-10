@@ -638,7 +638,7 @@
             vScroll = ele.find('.vAxiomScroll');
             components = ele.find('.mainComponentDiv');
 
-            cellEditor = $('<div contenteditable class="cellEditor">')
+            cellEditor = $('<div contenteditable class="cellEditor" style="border:' + cellSelectorBorder + 'px solid green; background:#fff; z-index:2">')
             components.append(cellEditor);
 
             mainEvents = ele.find('.mainEvents');

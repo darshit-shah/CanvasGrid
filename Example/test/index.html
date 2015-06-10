@@ -17,9 +17,7 @@
                 var info = {};
                 info.name = 'Column' + (col + 1);
                 info.width = 100 + parseInt(Math.random() * 50 * 0);
-                if (col % 3 == 0) {
-                    info.editable = true;
-                }
+                info.editable = true;
                 colInfo.push(info);
                 info = null;
             }
@@ -97,8 +95,8 @@
             //            $('#resizableDiv').on('resizestop', function (evt, ui) {
             //                $('#myDiv').trigger('resize', [ui.size.width, ui.size.height]);
             //            });
-            myGrid = $('#myDiv').CanvasGrid({ colInfo: colInfo, data: data, readOnly: true });
-            myGrid.addCellSelector($('#myDiv'), "Green", 1, 1, 1, 1, "MyGrid")
+            myGrid = $('#myDiv').CanvasGrid({ colInfo: colInfo, data: data, readOnly: false });
+            myGrid.addCellSelector($('#myDiv'), "Green", 1, 1, 1, 1, "MyGrid");
             //            $('#myDiv').trigger('resize', [$(window).width() - 20, $(window).height() - 20]);
         });
     </script>

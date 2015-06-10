@@ -1081,6 +1081,7 @@
                 //colStartIndex = freezeColIndex;
                 drawCanvas();
             }
+            selectCell();
         }
 
         var findStartIndexBasedOnScroll = function () {

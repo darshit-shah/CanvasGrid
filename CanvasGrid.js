@@ -619,8 +619,6 @@
         }
 
         var resize = function () {
-            ele.empty();
-
             var width = ele.width();
             var height = ele.height();
 
@@ -628,23 +626,11 @@
             canvasHeight = (height - (scrollBar_width + 2));
             canvasWidth = (width - (scrollBar_width + 2));
 
-            ele.append('<canvas id="mainAxiomCanvas" class="mainAxiomCanvas" width="' + canvasWidth + '" height="' + canvasHeight + '" style="background:#FEFEFE"></canvas>');
-            ele.append('<div class="mainComponentDiv" style="width:' + canvasWidth + 'px; height:' + canvasHeight + 'px; background:transparent; overflow:hidden"></div>');
-            ele.append('<div class="mainEvents" style="width:' + canvasWidth + 'px; height:' + canvasHeight + 'px; background:transparent;" tabindex="0"></div>');
-            ele.append('<div class="vAxiomScroll" style="width:' + scrollBar_width + 'px; Height:' + canvasHeight + 'px;"><div style="width:1px"></div></div>');
-            ele.append('<div class="hAxiomScroll" style="width:' + canvasWidth + 'px; Height:' + scrollBar_width + 'px;"><div style="height:1px"></div></div>');
-
-            hScroll = ele.find('.hAxiomScroll');
-            vScroll = ele.find('.vAxiomScroll');
-            components = ele.find('.mainComponentDiv');
-
-            cellEditor = $('<div contenteditable class="cellEditor" style="border:' + cellSelectorBorder + 'px solid green; background:#fff; z-index:2">')
-            components.append(cellEditor);
-
-            mainEvents = ele.find('.mainEvents');
-
-            canvas = ele.find("#mainAxiomCanvas")[0];
-            gContext = canvas.getContext('2d');
+            ele.find('.mainAxiomCanvas').attr("width", canvasWidth).attr("height", canvasHeight);
+            ele.find('.mainComponentDiv').css("width", canvasWidth).css("height", canvasHeight);
+            ele.find('.mainEvents').css("width", canvasWidth).css("height", canvasHeight);
+            ele.find('.vAxiomScroll').css("height", canvasHeight);
+            ele.find('.hAxiomScroll').css("width", canvasWidth);
 
             rowStartIndex = freezeRowIndex;
             colStartIndex = freezeColIndex;
@@ -936,6 +922,33 @@
         }
 
         var init = function () {
+            ele.empty();
+
+            var width = ele.width();
+            var height = ele.height();
+
+            var scrollBar_width = 18;
+            canvasHeight = (height - (scrollBar_width + 2));
+            canvasWidth = (width - (scrollBar_width + 2));
+
+            ele.append('<canvas id="mainAxiomCanvas" class="mainAxiomCanvas" width="' + canvasWidth + '" height="' + canvasHeight + '" style="background:#FEFEFE"></canvas>');
+            ele.append('<div class="mainComponentDiv" style="width:' + canvasWidth + 'px; height:' + canvasHeight + 'px; background:transparent; overflow:hidden"></div>');
+            ele.append('<div class="mainEvents" style="width:' + canvasWidth + 'px; height:' + canvasHeight + 'px; background:transparent;" tabindex="0"></div>');
+            ele.append('<div class="vAxiomScroll" style="width:' + scrollBar_width + 'px; Height:' + canvasHeight + 'px;"><div style="width:1px"></div></div>');
+            ele.append('<div class="hAxiomScroll" style="width:' + canvasWidth + 'px; Height:' + scrollBar_width + 'px;"><div style="height:1px"></div></div>');
+
+            hScroll = ele.find('.hAxiomScroll');
+            vScroll = ele.find('.vAxiomScroll');
+            components = ele.find('.mainComponentDiv');
+
+            cellEditor = $('<div contenteditable class="cellEditor" style="border:' + cellSelectorBorder + 'px solid green; background:#fff; z-index:2">')
+            components.append(cellEditor);
+
+            mainEvents = ele.find('.mainEvents');
+
+            canvas = ele.find("#mainAxiomCanvas")[0];
+            gContext = canvas.getContext('2d');
+
             $(document).mousemove(function (evt) {
                 //console.log('document mouse move');
                 if (isDragStart && evt.which === 1) {
@@ -1076,11 +1089,12 @@
 
             hScroll.scrollLeft(hScrollPos);
             vScroll.scrollTop(vScrollPos);
-            if (totalWidth < hScroll.width() || totalHeight < vScroll.height()) {
-                //rowStartIndex = freezeRowIndex;
-                //colStartIndex = freezeColIndex;
-                drawCanvas();
-            }
+            //            if (totalWidth < hScroll.width() || totalHeight < vScroll.height()) {
+            //                //rowStartIndex = freezeRowIndex;
+            //                //colStartIndex = freezeColIndex;
+            //                drawCanvas();
+            //            }
+            drawCanvas();
             selectCell();
         }
 

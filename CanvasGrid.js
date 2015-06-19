@@ -1,5 +1,11 @@
 ﻿(function ($) {
     var CanvasGridMethods = {
+        getData: function (ele) {
+            if (ele.data('objCanvasGrid') == undefined)
+                console.log('error in getData');
+            else
+                return ele.data('objCanvasGrid').getData();
+        },
         selectCells: function (ele, key, colStart, rowStart, colEnd, rowEnd) {
             if (ele.data('objCanvasGrid') == undefined)
                 console.log('error in selectCell');
@@ -180,7 +186,7 @@
                 var mousePos = getMousePos(canvas, evt);
                 var y = 0;
                 var yCounter = 0;
-                for (yCounter = 0; yCounter < (numRows - 1); ) {
+                for (yCounter = 0; yCounter < (numRows - 1) ;) {
                     //while (rowStartIndex + yCounter < (numRows - 1) && (y + data[rowStartIndex + yCounter].height) < mousePos.y) {
                     if (yCounter >= freezeRowIndex && yCounter < rowStartIndex)
                         yCounter = rowStartIndex;
@@ -193,7 +199,7 @@
                 var y1 = y + data[yCounter].height;
                 var x = 0;
                 var xCounter = 0;
-                for (xCounter = 0; xCounter < (numCols - 1); ) {
+                for (xCounter = 0; xCounter < (numCols - 1) ;) {
                     //while (colStartIndex + xCounter < (numCols - 1) && (x + colInfo[colStartIndex + xCounter].width) < mousePos.x) {
                     if (xCounter >= freezeColIndex && xCounter < colStartIndex)
                         xCounter = colStartIndex;
@@ -256,7 +262,7 @@
                         var mousePos = getMousePos(canvas, evt);
                         var y = 0;
                         var yCounter = 0;
-                        for (yCounter = 0; yCounter < (numRows - 1); ) {
+                        for (yCounter = 0; yCounter < (numRows - 1) ;) {
                             //while (rowStartIndex + yCounter < (numRows - 1) && (y + data[rowStartIndex + yCounter].height) < mousePos.y) {
                             if (yCounter >= freezeRowIndex && yCounter < rowStartIndex)
                                 yCounter = rowStartIndex;
@@ -269,7 +275,7 @@
                         var y1 = y + data[yCounter].height;
                         var x = 0;
                         var xCounter = 0;
-                        for (xCounter = 0; xCounter < (numCols - 1); ) {
+                        for (xCounter = 0; xCounter < (numCols - 1) ;) {
                             //while (colStartIndex + xCounter < (numCols - 1) && (x + colInfo[colStartIndex + xCounter].width) < mousePos.x) {
                             if (xCounter >= freezeColIndex && xCounter < colStartIndex)
                                 xCounter = colStartIndex;
@@ -841,7 +847,7 @@
                 }
             }
             if (triggerChange != false)
-                ele.trigger('updateSelection', [{ key: options.MyKey, colStart: selectedColStartIndex[options.MyKey], rowStart: selectedRowStartIndex[options.MyKey], colEnd: selectedColEndIndex[options.MyKey], rowEnd: selectedRowEndIndex[options.MyKey], selectedStartBox: selectedStartBox[options.MyKey], selectedEndBox: selectedEndBox[options.MyKey]}]);
+                ele.trigger('updateSelection', [{ key: options.MyKey, colStart: selectedColStartIndex[options.MyKey], rowStart: selectedRowStartIndex[options.MyKey], colEnd: selectedColEndIndex[options.MyKey], rowEnd: selectedRowEndIndex[options.MyKey], selectedStartBox: selectedStartBox[options.MyKey], selectedEndBox: selectedEndBox[options.MyKey] }]);
             updateAnotatedItemPositions();
         }
 
@@ -861,7 +867,7 @@
                         .css('top', y)
                         .css('width', (x1 - x) + 'px')
                         .css('height', (y1 - y) + 'px')
-                        ;
+                    ;
 
                     cellSelectorsVisible[key] = true;
                 }
@@ -873,7 +879,7 @@
                         .style('top', y + 'px')
                         .style('width', (x1 - x) + 'px')
                         .style('height', (y1 - y) + 'px')
-                        ;
+                    ;
                 }
             }
             if (key == options.MyKey) {
@@ -1596,6 +1602,10 @@
             }
             processData();
             updateScrollBars();
+        }
+
+        this.getData = function () {
+            return [].concat(data);
         }
 
         init();

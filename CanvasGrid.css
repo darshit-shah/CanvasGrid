@@ -1,58 +1,46 @@
-﻿.hAxiomScroll
-{
-    bottom:0;
-    position: absolute;
-    margin:1px;
-    overflow-x: scroll;
+.hAxiomScroll {
+  bottom: 0;
+  position: absolute;
+  margin: 1px;
+  overflow-x: scroll;
 }
-
-.vAxiomScroll
-{
-    position: absolute;
-    right:0;
-    margin:1px;
-    overflow-y: scroll;
+.vAxiomScroll {
+  position: absolute;
+  right: 0;
+  margin: 1px;
+  overflow-y: scroll;
 }
-
-.mainAxiomCanvas
-{
-    position:absolute;
-    top:0;
-    left:0;
+.mainAxiomCanvas {
+  position: absolute;
+  top: 0;
+  left: 0;
 }
-
-.mainComponentDiv
-{
-    position:absolute;
-    top:0;
-    left:0;
+.mainComponentDiv {
+  position: absolute;
+  top: 0;
+  left: 0;
 }
-
-.cellSelector
-{
-    position:absolute;
-    box-sizing: content-box;
+.cellSelector {
+  position: absolute;
+  box-sizing: content-box;
 }
-
-.cellEditor
-{
-    position:absolute;
-    background-color: #fff;
-    font-size: 15px;
-    font-family: Calibri;
-    cursor: default;
-    white-space: pre-wrap; /*resize: none;*/
-    overflow-x: hidden;
-    overflow-y: auto;
-    outline:none;
-    color: Black;
-    padding:2px;
-    box-sizing: content-box;
+.cellEditor {
+  position: absolute;
+  background-color: #fff;
+  font-size: 15px;
+  font-family: Calibri;
+  cursor: default;
+  white-space: pre-wrap;
+  /*resize: none;*/
+  overflow-x: hidden;
+  overflow-y: auto;
+  outline: none;
+  color: Black;
+  padding: 2px;
+  box-sizing: content-box;
 }
-
-.mainEvents
-{
-    position:absolute;
-    top:0;
-    left:0;
+.mainEvents {
+  position: absolute;
+  top: 0;
+  left: 0;
 }

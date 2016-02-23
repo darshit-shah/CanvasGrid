@@ -176,9 +176,13 @@
                 }
             })
 
-
+            function forwardEvent(evt){
+              // console.log(evt);
+              ele.trigger(evt);
+            }
 
             mainEvents.mousedown(function (evt) {
+                forwardEvent(evt);
                 mainEvents.focus();
                 //console.log('mainEvents', evt.type);
                 var tmpSelectedRowIndex = 0;
@@ -224,7 +228,7 @@
                     isDragStart = true;
                 }
                 else {
-                    console.log(tmpSelectedRowIndex, tmpSelectedColIndex);
+                    // console.log(tmpSelectedRowIndex, tmpSelectedColIndex);
                 }
                 //console.log('Drag Start');
                 evt.preventDefault();
@@ -233,6 +237,7 @@
             });
 
             mainEvents.mouseup(function (evt, evt1) {
+                forwardEvent(evt);
                 //console.log('mainEvents', evt.type);
                 if (evt1)
                     evt = evt1;
@@ -318,17 +323,22 @@
                         $(mainEvents).trigger('mouseup', [evt]);
                     }
                 }
+                else {
+                    forwardEvent(evt);
+                }
                 evt.preventDefault();
                 evt.stopPropagation();
             });
 
             mainEvents.mouseenter(function (evt, evt1) {
+                forwardEvent(evt);
                 //console.log('mainEvents', evt.type);
                 evt.preventDefault();
                 evt.stopPropagation();
             });
 
             mainEvents.mouseleave(function (evt, evt1) {
+                forwardEvent(evt);
                 //console.log('mainEvents', evt.type);
                 evt.preventDefault();
                 evt.stopPropagation();
@@ -460,7 +470,7 @@
                                     && e.keyCode != 27  // Esc key
                                     ) {
                                 if (colInfo[selectedColStartIndex[options.MyKey]].editable && !isGridReadOnly) {
-                                    console.log(e.keyCode);
+                                    // console.log(e.keyCode);
                                     cellEditor.html('');
                                     cellEditor.show();
                                     cellEditor.focus();

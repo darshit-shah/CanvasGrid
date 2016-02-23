@@ -98,6 +98,18 @@
             myGrid = $('#myDiv').CanvasGrid({ colInfo: colInfo, data: data, readOnly: false });
             myGrid.addCellSelector($('#myDiv'), "Green", 1, 1, 1, 1, "MyGrid");
             //            $('#myDiv').trigger('resize', [$(window).width() - 20, $(window).height() - 20]);
+            $('#myDiv').on("updateSelection", function(e, data){
+              console.log("updateSelection", e, data);
+            });
+            $('#myDiv').on("mousemove", function(e, data){
+              console.log("mousemove", e, data);
+            });
+            $('#myDiv').on("mouseup", function(e, data){
+              console.log("mouseup", e, data);
+            });
+            $('#myDiv').on("mousedown", function(e, data){
+              console.log("mousedown", e, data);
+            });
         });
     </script>
     <style>

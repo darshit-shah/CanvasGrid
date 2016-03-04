@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Title of the document</title>
+    <script src="../../CanvasGrid.v2.js"></script>
+    <script>
+        function setEventCallback(gridSelector) {
+            var grid = document.querySelector(gridSelector);
+            var numRows = 100;
+            var numCols = 100;
+
+            var data = new Array(numRows);
+            grid.setCallbackMethod('getData', function (ref, startRow, startCol, endRow, endCol, cb) {
+                var gridRows = endRow - startRow + 1;
+                var gridCols = endCol - startCol + 1;
+                var gridData = new Array(gridRows);
+                for (var rIndex = 0; rIndex <= gridRows; rIndex++) {
+                    gridData[rIndex] = new Array(gridCols)
+                    for (var cIndex = 0; cIndex <= gridCols; cIndex++) {
+                        gridData[rIndex][cIndex] = (startRow + rIndex + 1) + '_' + (startCol + cIndex + 1);
+                    }
+                }
+                setTimeout(function () {
+                    cb(ref, gridData);
+                    gridData = null;
+                }, 100 + (Math.random() * 1000));
+
+                //cb(ref, gridData);
+            });
+
+            grid.setAttribute('rows', numRows);
+            grid.setAttribute('cols', numCols);
+        }
+
+        setTimeout(function () {
+            setEventCallback('#grid1');
+        }, 1);
+    </script>
+</head>
+<body>
+    <div>
+        <canvas-grid id="grid1" width="1900px" height="900px" gridlinescolor="#0F0F0F" rowstartindex="0" colstartindex="0" rowheight="20" colwidth="100" rows="100" cols="100"></canvas-grid>
+    </div>
+    <br />
+    <!--<div>
+        <canvas-grid id="grid2" width="800px" height="300px" rows="50" cols="50" gridlinescolor="green"></canvas-grid>
+    </div>-->
+</body>
+</html>

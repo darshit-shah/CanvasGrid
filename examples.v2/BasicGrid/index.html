@@ -1,50 +1,192 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0">
     <title>Title of the document</title>
-    <script src="../../CanvasGrid.v2.js"></script>
+    <script src="d3.v3.js"></script>
+    <script src="CanvasGrid.v2.js"></script>
     <script>
         function setEventCallback(gridSelector) {
             var grid = document.querySelector(gridSelector);
-            var numRows = 100;
+            var numRows = 1000;
             var numCols = 100;
 
             var data = new Array(numRows);
-            grid.setCallbackMethod('getData', function (ref, startRow, startCol, endRow, endCol, cb) {
-                var gridRows = endRow - startRow + 1;
-                var gridCols = endCol - startCol + 1;
-                var gridData = new Array(gridRows);
-                for (var rIndex = 0; rIndex <= gridRows; rIndex++) {
-                    gridData[rIndex] = new Array(gridCols)
-                    for (var cIndex = 0; cIndex <= gridCols; cIndex++) {
-                        gridData[rIndex][cIndex] = (startRow + rIndex + 1) + '_' + (startCol + cIndex + 1);
+            grid.setCallbackMethod('getData', function (ref, nullValues, cb) {
+                var rows = Object.keys(nullValues);
+                rows.forEach(function (rowIndex) {
+                    var cols = Object.keys(nullValues[rowIndex]);
+                    cols.forEach(function (colIndex) {
+                        var value = null;
+                        if (rowIndex == 0) {
+                            if (colIndex == 0) {
+                                value = "";
+                            }
+                            else {
+                                value = getAlphaColumnHeader(colIndex - 1, "");
+                            }
+                        }
+                        else if (rowIndex == 1) {
+                            if (colIndex == 0) {
+                                value = "";
+                            }
+                            else {
+                                value = "Column" + (colIndex)
+                            }
+                        }
+                        else {
+                            if (colIndex == 0) {
+                                value = (rowIndex - 1).toString()
+                            }
+                            else {
+                                if (colIndex == 1);
+                                value = {
+                                    //text: "Column value for " + (rowIndex - 1).toString() + "_" + (colIndex).toString(),
+                                    text: (rowIndex - 1).toString() + "_" + (colIndex).toString(),
+                                    //text: "the nexus 5 is the best phone in this price range, it does come with a small battery & the camera is not the best considering other flagship models but the fact that you get the latest chipset from qualcomm & the adreno 330 gpu along with 2gb ram & most important of all updates from google for the next 18 months at least makes this phone a value for money product, another stand out feature for me is corning gorilla glass 3 which means a screen guard is not required for the screen however some may disagree.",
+                                    cellProperties: {
+                                        //height: 20 + (5  * (rowIndex - 1)),
+                                        //width: 50 + (20 * (colIndex)),
+                                        //background: { color: '#FCFCFC', img: null },
+                                        border: (colIndex % 3 == 1 && rowIndex % 3 == 1) ? {
+                                            left: { width: 1, style: 'solid', color: 'blue' },
+                                            right: { width: 1, style: 'solid', color: 'green' },
+                                            top: { width: 1, style: 'solid', color: 'red' },
+                                            bottom: { width: 1, style: 'solid', color: 'cyan' }
+                                        } : {},
+                                        textStyle: {
+                                            textAlign: (colIndex < 5 ? 'center' : colIndex < 10 ? 'left' : 'right'),
+                                            textBaseline: (colIndex < 5 ? 'middle' : colIndex < 10 ? 'top' : 'bottom'),
+                                            size: (colIndex < 5 ? 8 : colIndex < 10 ? 11 : 15),
+                                            //family: 'Calibri',
+                                            //bold: (colIndex < 10 ? false : true),
+                                            //italics: (colIndex < 10 ? false : true),
+                                            color: (colIndex < 5 ? 'black' : colIndex < 10 ? 'green' : 'blue'),
+                                            wrap: (colIndex < 2 ? 0 : colIndex < 15 ? 1 : 2)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        nullValues[rowIndex][colIndex] = value;
+                    });
+                });
+                //setTimeout(function () {
+                //    cb(ref, nullValues);
+                //    gridData = null;
+                //}, 100 + ((Math.random() * 100) * (Math.random() * 10)));
+
+                setTimeout(function () {
+                    debugger;
+                    cb(ref, nullValues);
+                }, 10);
+            });
+
+            //grid.setCallbackMethod('getRowHeight', function (rowIndex) {
+            //    if (rowIndex % 5 === 0) {
+            //        return 50;
+            //    }
+            //    else {
+            //        return 10;
+            //    }
+            //});
+
+            //grid.setCallbackMethod('getColumnWidth', function (colIndex) {
+            //    if (colIndex % 2 === 0) {
+            //        return 50;
+            //    }
+            //    else {
+            //        return 25;
+            //    }
+            //});
+
+            grid.setCallbackMethod('getCellValue', function (rowIndex, colIndex) {
+                var value = null;
+                if (rowIndex === 0) {
+                    if (colIndex === 0) {
+                        value = {
+                            text: "",
+                            cellProperties: {
+                                background: { color: '#EFEFEF' },
+                                textStyle: { textAlign: 'center', wrap: 2 }
+                            }
+                        };
+                    }
+                    else {//Column Header AZ
+                        value = {
+                            text: getAlphaColumnHeader(colIndex - 1, ""),
+                            cellProperties: {
+                                background: { color: '#EFEFEF' },
+                                textStyle: { textAlign: 'center', wrap: 2 }
+                            }
+                        };
                     }
                 }
-                setTimeout(function () {
-                    cb(ref, gridData);
-                    gridData = null;
-                }, 100 + (Math.random() * 1000));
-
-                //cb(ref, gridData);
+                else if (rowIndex === 1) {
+                    if (colIndex === 0) {
+                        value = {
+                            text: "",
+                            cellProperties: {
+                                background: { color: '#EFEFEF' },
+                                textStyle: { textAlign: 'center', wrap: 2 }
+                            }
+                        };
+                    }
+                    else {//Column Name
+                        value = {
+                            text: "Column " + (colIndex),
+                            cellProperties: {
+                                background: { color: '#EFEFEF' },
+                                textStyle: { textAlign: 'center', wrap: 2 }
+                            }
+                        }
+                    }
+                }
+                else {
+                    //Row Header
+                    if (colIndex === 0) {
+                        value = {
+                            text: (rowIndex - 1).toString(),
+                            cellProperties: {
+                                background: { color: '#EFEFEF' },
+                                textStyle: { textAlign: 'center', wrap: 2 }
+                            }
+                        }
+                    }
+                }
+                return value;
             });
 
             grid.setAttribute('rows', numRows);
             grid.setAttribute('cols', numCols);
+            //debugger;
+            grid.setAttribute('width', (window.innerWidth - 20) + 'px');
+            grid.setAttribute('height', (window.innerHeight - 20) + 'px');
+        }
+
+        var getAlphaColumnHeader = function (i, s) {
+            var rem = i % 26;
+            s = String.fromCharCode(65 + rem) + s;
+            i = i / 26 - 1;
+            return i < 0 ? s : getAlphaColumnHeader(i, s);
         }
 
         setTimeout(function () {
             setEventCallback('#grid1');
         }, 1);
+
+        function clearContent() {
+            d3.selectAll('#events *').remove();
+        }
     </script>
 </head>
 <body>
-    <div>
-        <canvas-grid id="grid1" width="1900px" height="900px" gridlinescolor="#0F0F0F" rowstartindex="0" colstartindex="0" rowheight="20" colwidth="100" rows="100" cols="100"></canvas-grid>
-    </div>
-    <br />
+    <canvas-grid id="grid1" width="500px" height="200px" gridlinescolor="#AAA" backgroundcolor="#FFFFFF" rowstartindex="0" colstartindex="0" rowheight="30" colwidth="100" rows="0" cols="0" freezerowindex="2" freezecolindex="1"></canvas-grid>
     <!--<div>
         <canvas-grid id="grid2" width="800px" height="300px" rows="50" cols="50" gridlinescolor="green"></canvas-grid>
+    </div>-->
+    <!--<input type="button"  onclick="clearContent()" value="clear" />
+    <div id="events">
     </div>-->
 </body>
 </html>

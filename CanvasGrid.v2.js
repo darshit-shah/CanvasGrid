@@ -177,9 +177,49 @@ CanvasGrid.bindEvents = function (_this) {
             }
         }
         else {
-            internalTimer(100, function (perc) {
-                _this.mainCtx.drawImage(_this.grid, 0, _this.state.dynamicProperties.freezeY, gridWidth, gridHeight, 0, _this.state.dynamicProperties.freezeY + deltaY - (deltaY * perc), gridWidth, gridHeight);
-            });
+            //internalTimer(100, function (perc) {
+            //    _this.mainCtx.drawImage(_this.grid, 0, _this.state.dynamicProperties.freezeY, gridWidth, gridHeight, 0, _this.state.dynamicProperties.freezeY + deltaY - (deltaY * perc), gridWidth, gridHeight);
+            //});
+            var newRowIndex = _this.state.dynamicProperties.rowStartIndex;
+            var newDelta = 0;
+            for (rIndex = newRowIndex; rIndex > _this.state.dynamicProperties.freezeRowIndex && deltaY > 0; rIndex--) {
+                if (0 > deltaY * -1) {
+                    newRowIndex--;
+                    deltaY -= _this.state.dynamicProperties.currRowsWithHeight[rIndex];
+                    newDelta += _this.state.dynamicProperties.currRowsWithHeight[rIndex];
+                }
+                else {
+                    break;
+                }
+            }
+            if (newRowIndex != _this.state.dynamicProperties.rowStartIndex) {
+                //debugger;
+                internalTimer(-deltaY * 1.5, function (perc) {
+                    //_this.mainCtx.clearRect(0, _this.state.dynamicProperties.freezeY, gridWidth, _this.state.dynamicProperties.freezeY - deltaY);
+                    var diff = 0;
+                    var shift = 0;
+                    if ((gridHeight * 3 - newDelta) > ((gridHeight * 2) + _this.state.dynamicProperties.freezeY)) {
+                        shift = gridHeight * 3 - newDelta;
+                    }
+                    else {
+                        shift = ((gridHeight * 2) + _this.state.dynamicProperties.freezeY);
+                        diff = ((gridHeight * 2) + _this.state.dynamicProperties.freezeY) - (gridHeight * 3 - newDelta);
+                    }
+                    _this.mainCtx.drawImage(_this.grid, 0, shift, gridWidth, diff + newDelta, 0, _this.state.dynamicProperties.freezeY + diff, gridWidth, diff + newDelta);
+                    _this.mainCtx.drawImage(_this.grid, 0, _this.state.dynamicProperties.freezeY, gridWidth, gridHeight, 0, _this.state.dynamicProperties.freezeY + newDelta, gridWidth, gridHeight);
+
+                    //_this.mainCtx.drawImage(_this.grid, 0, _this.state.dynamicProperties.freezeY + ((newDelta + deltaY) - (deltaY * perc)), gridWidth, gridHeight, 0, _this.state.dynamicProperties.freezeY, gridWidth, gridHeight);
+                    if (perc === 1) {
+                        CanvasGrid.updateProp(_this, "rowStartIndex", newRowIndex);
+                    }
+                });
+            }
+            else {
+                console.log("This should never happen if we scroll only up");
+                internalTimer(100, function (perc) {
+                    _this.mainCtx.drawImage(_this.grid, 0, _this.state.dynamicProperties.freezeY, gridWidth, gridHeight, 0, _this.state.dynamicProperties.freezeY + deltaY - (deltaY * perc), gridWidth, gridHeight);
+                });
+            }
         }
     });
 
@@ -386,33 +426,15 @@ CanvasGrid.renderGrid = function (_this) {
     var gridWidth = _this.state.containerProperties.width;
     var gridHeight = _this.state.containerProperties.height;
 
-    console.log("CanvasGrid.renderGrid called:", _this.state.dynamicProperties.rowStartIndex, _this.state.dynamicProperties.colStartIndex);
-    if (_this.state.dynamicProperties.rowStartIndexOld == undefined || _this.state.dynamicProperties.rowStartIndexOld < _this.state.dynamicProperties.rowStartIndex) {
-        var copyHeight = _this.state.dynamicProperties.freezeY;
-        for (rI = _this.state.dynamicProperties.rowStartIndexOld; rI < _this.state.dynamicProperties.rowStartIndex; rI++) {
-            copyHeight += _this.state.dynamicProperties.currRowsWithHeight[rI];
-        }
-        _this.ctx.drawImage(_this.grid, 0, gridHeight * 2 + (copyHeight - _this.state.dynamicProperties.freezeY), gridWidth, gridHeight - (copyHeight - _this.state.dynamicProperties.freezeY), 0, gridHeight * 2, gridWidth, gridHeight - (copyHeight - _this.state.dynamicProperties.freezeY));
-        _this.ctx.drawImage(_this.grid, 0, _this.state.dynamicProperties.freezeY, gridWidth, copyHeight - _this.state.dynamicProperties.freezeY, 0, gridHeight * 3 - (copyHeight - _this.state.dynamicProperties.freezeY), gridWidth, copyHeight - _this.state.dynamicProperties.freezeY);
-    }
-    else if (_this.state.dynamicProperties.rowStartIndexOld > _this.state.dynamicProperties.rowStartIndex) {
-        //debugger;
-        var copyHeight = _this.state.dynamicProperties.freezeY;
-        for (rI = _this.state.dynamicProperties.rowStartIndex; rI < _this.state.dynamicProperties.rowStartIndexOld; rI++) {
-            copyHeight += _this.state.dynamicProperties.currRowsWithHeight[rI];
-        }
+    _this.ctx.beginPath();
+    _this.ctx.rect(0, 0, _this.state.gridProperties.width, _this.state.gridProperties.height * 3);
+    _this.ctx.fillStyle = _this.state.cellProperties.background.color;
+    _this.ctx.fill();
 
-        //_this.ctx.drawImage(_this.grid, 0, (gridHeight * 2), gridWidth, gridHeight - 30, 0, (gridHeight * 2) + 30, gridWidth, gridHeight - 30);
-        //_this.ctx.clearRect(0, gridHeight * 2, gridWidth, 30);
-        //_this.ctx.drawImage(_this.grid, 0, _this.state.dynamicProperties.freezeY, gridWidth, copyHeight - _this.state.dynamicProperties.freezeY, 0, gridHeight * 3 - (copyHeight - _this.state.dynamicProperties.freezeY), gridWidth, copyHeight - _this.state.dynamicProperties.freezeY);
-    }
-
-    //// save canvas image as data url (png format by default)
-    //var dataURL = _this.grid.toDataURL();
-
-    //// set canvasImg image src to dataURL
-    //// so it can be saved as an image
-    //document.getElementById('canvasImg').src = dataURL;
+    _this.cellCtx.beginPath();
+    _this.cellCtx.rect(0, 0, _this.state.gridProperties.width, _this.state.gridProperties.height * 3);
+    _this.cellCtx.fillStyle = _this.state.cellProperties.background.color;
+    _this.cellCtx.fill();
 
     var rowNumberColWidth = 0;
     var currX = 0, currY = 0;
@@ -428,6 +450,7 @@ CanvasGrid.renderGrid = function (_this) {
     var redraw = false;
 
     var nullValues = {};
+    var availableValues = {};
     function renderCell(currRow, currCol, isExtraRow) {
         if (isExtraRow !== true) {
             _this.state.dynamicProperties.rowEndIndex = currRow - 1;
@@ -435,8 +458,8 @@ CanvasGrid.renderGrid = function (_this) {
         _this.state.dynamicProperties.colEndIndex = currCol;
         var cellValue = null;
         var cellProperties = _this.state.cellProperties;
-        if (nullValues.hasOwnProperty(currRow) && nullValues[currRow][currCol] != null) {
-            cellValue = nullValues[currRow][currCol];
+        if (availableValues.hasOwnProperty(currRow) && availableValues[currRow][currCol] != null) {
+            cellValue = availableValues[currRow][currCol];
         }
         else if (_this.callbackMethods['getCellValue']) {
             cellValue = _this.callbackMethods['getCellValue'].callback(currRow, currCol);
@@ -482,7 +505,7 @@ CanvasGrid.renderGrid = function (_this) {
         currX += _this.state.dynamicProperties.currColumnsWithWidth[currCol];
     }
 
-    function renderRow(currRow, isExtraRow) {
+    function renderRow(currRow, isExtraRow, isReverse) {
         currX = 0;
         if (_this.state.dynamicProperties.currRowsWithHeight[currRow] == undefined && _this.callbackMethods['getRowHeight']) {
             _this.state.dynamicProperties.currRowsWithHeight[currRow] = _this.callbackMethods['getRowHeight'].callback(currRow);
@@ -497,7 +520,12 @@ CanvasGrid.renderGrid = function (_this) {
         for (var currCol = _this.state.dynamicProperties.colStartIndex; currCol < _this.state.gridProperties.cols && currX <= gridWidth; currCol++) {
             renderCell(currRow, currCol, isExtraRow);
         }
-        currY += _this.state.dynamicProperties.currRowsWithHeight[currRow];
+        if (isReverse === true) {
+            currY -= _this.state.dynamicProperties.currRowsWithHeight[currRow];
+        }
+        else {
+            currY += _this.state.dynamicProperties.currRowsWithHeight[currRow];
+        }
     }
 
     function renderAllRows() {
@@ -518,34 +546,72 @@ CanvasGrid.renderGrid = function (_this) {
         }
         if (redraw == false) {
             _this.mainCtx.drawImage(_this.grid, 0, 0, gridWidth, gridHeight, 0, 0, gridWidth, gridHeight);
-            for (; currRow < _this.state.gridProperties.rows && currY <= gridHeight * 2 - 30; currRow++) {
-                renderRow(currRow, true);
+
+            if (_this.state.dynamicProperties.extraRowsRenderTimeoutInterval != null) {
+                clearInterval(_this.state.dynamicProperties.extraRowsRenderTimeoutInterval);
             }
+            _this.state.dynamicProperties.extraRowsRenderTimeoutInterval = setTimeout(function () {
+                for (; currRow < _this.state.gridProperties.rows && currY <= gridHeight * 2; currRow++) {
+                    renderRow(currRow, true);
+                }
+
+                if (_this.state.dynamicProperties.currRowsWithHeight[_this.state.dynamicProperties.rowStartIndex - 1] != undefined) {
+                    currY = gridHeight * 3 - _this.state.dynamicProperties.currRowsWithHeight[_this.state.dynamicProperties.rowStartIndex - 1];
+                }
+                else {
+                    currY = gridHeight * 3;
+                }
+                for (currRow = _this.state.dynamicProperties.rowStartIndex - 1; currRow >= _this.state.dynamicProperties.freezeRowIndex && currY > gridHeight * 2; currRow--) {
+                    renderRow(currRow, true, true);
+                }
+                if (Object.keys(nullValues).length > 0 && _this.callbackMethods['getData']) {
+                    _this.callbackMethods['getData'].counter++;
+                    //console.log("Calling Get Data for ", _this.callbackMethods['getData'].counter);
+                    setTimeout(function () {
+                        _this.callbackMethods['getData'].callback(_this.callbackMethods['getData'].counter, nullValues, function (counter, data) {
+                            //console.log("returned Get Data", counter);
+                            if (_this.callbackMethods['getData'].counter === counter) {
+                                availableValues = data;
+                                nullValues = {};
+                                renderAllRows();
+                                data = null;
+                            }
+                        });
+                    }, 10);
+                }
+            }, 100);
             _this.state.dynamicProperties.rowStartIndexOld = _this.state.dynamicProperties.rowStartIndex;
             _this.state.dynamicProperties.colStartIndexOld = _this.state.dynamicProperties.colStartIndex;
 
             _this.state.dynamicProperties.rowEndIndexOld = _this.state.dynamicProperties.rowEndIndex;
             _this.state.dynamicProperties.colEndIndexOld = _this.state.dynamicProperties.colEndIndex;
+
+            //// save canvas image as data url (png format by default)
+            //var dataURL = _this.grid.toDataURL();
+
+            //// set canvasImg image src to dataURL
+            //// so it can be saved as an image
+            //document.getElementById('canvasImg').src = dataURL;
         }
         else {
             renderAllRows();
         }
     }
     renderAllRows();
-    if (Object.keys(nullValues).length > 0 && _this.callbackMethods['getData']) {
-        _this.callbackMethods['getData'].counter++;
-        //console.log("Calling Get Data for ", _this.callbackMethods['getData'].counter);
-        setTimeout(function () {
-            _this.callbackMethods['getData'].callback(_this.callbackMethods['getData'].counter, nullValues, function (counter, data) {
-                //console.log("returned Get Data", counter);
-                if (_this.callbackMethods['getData'].counter === counter) {
-                    nullValues = data;
-                    renderAllRows();
-                    data = null;
-                }
-            });
-        }, 10);
-    }
+    //if (Object.keys(nullValues).length > 0 && _this.callbackMethods['getData']) {
+    //    _this.callbackMethods['getData'].counter++;
+    //    //console.log("Calling Get Data for ", _this.callbackMethods['getData'].counter);
+    //    setTimeout(function () {
+    //        _this.callbackMethods['getData'].callback(_this.callbackMethods['getData'].counter, nullValues, function (counter, data) {
+    //            //console.log("returned Get Data", counter);
+    //            if (_this.callbackMethods['getData'].counter === counter) {
+    //                nullValues = data;
+    //                renderAllRows();
+    //                data = null;
+    //            }
+    //        });
+    //    }, 10);
+    //}
     _this.eventLayer.focus();
     return;
 };
@@ -632,7 +698,9 @@ CanvasGrid.drawCell = function (_this, x0, y0, x1, y1, cellValue, cellProperties
     if (cellProperties != null && cellProperties.background != null && cellProperties.background.img != null) {
         CanvasGrid.drawImage(_this, x0, y0, x1, y1, cellProperties.background.img);
     }
-    _this.ctx.drawImage(_this.cell, x0, y0, (x1 - x0), (y1 - y0), x0, y0, (x1 - x0), (y1 - y0));
+    var innerWidth = (x1 - x0);
+    var innerHeight = (y1 - y0);
+    _this.ctx.drawImage(_this.cell, x0, y0, innerWidth, innerHeight, x0, y0, innerWidth, innerHeight);
     return matrix;
 }
 
@@ -653,11 +721,15 @@ CanvasGrid.measureText = function (_this, text, textStyle) {
 }
 
 CanvasGrid.drawImage = function (_this, x0, y0, x1, y1, image) {
+    var tmpStartRow = _this.state.dynamicProperties.rowStartIndex;
+    var tmpStartCol = _this.state.dynamicProperties.colStartIndex;
     var imageObj = new Image();
 
     imageObj.onload = function () {
-        _this.mainCtx.drawImage(imageObj, x0, y0, x1 - x0, y1 - y0);
-        _this.ctx.drawImage(imageObj, x0, y0, x1 - x0, y1 - y0);
+        if (tmpStartRow === _this.state.dynamicProperties.rowStartIndex && tmpStartCol === _this.state.dynamicProperties.colStartIndex) {
+            _this.mainCtx.drawImage(imageObj, x0, y0, x1 - x0, y1 - y0);
+            _this.ctx.drawImage(imageObj, x0, y0, x1 - x0, y1 - y0);
+        }
     };
     imageObj.src = image.url;//'http://www.html5canvastutorials.com/demos/assets/darth-vader.jpg';
 }

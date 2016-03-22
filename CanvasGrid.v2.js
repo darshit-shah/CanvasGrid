@@ -20,6 +20,7 @@ CanvasGrid.createdCallback = function () {
     _this.mainContainer = document.createElement('div');
     _this.mainContainer.style.border = '1px solid #0F0F0F';
     _this.mainContainer.style.position = 'relative';
+    _this.mainContainer.style.overflow = 'hidden';
     _this.appendChild(_this.mainContainer);
 
 
@@ -98,10 +99,13 @@ CanvasGrid.bindEvents = function (_this) {
         var coordinates = d3.touches(this);
         touchStart = coordinates[0];
         touchStartTime = new Date().getTime();
+        touchEnd = null;
     });
 
     d3.select(_this.eventLayer).on('touchmove', function (e) {
         d3.event.preventDefault();
+        if (touchStart === null)
+            return;
         var coordinates = d3.touches(this);
         touchEnd = coordinates[0];
 
@@ -111,45 +115,86 @@ CanvasGrid.bindEvents = function (_this) {
         var xDir = deltaX <= 0 ? -1 : 1;
         var yDir = deltaY <= 0 ? -1 : 1;
 
-
-        var deltaRows = 0, deltaCols = 0;
-        if (deltaX != 0 && Math.abs(deltaX) > Math.abs(deltaY)) {
-            deltaCols = Math.ceil(deltaX * xDir / _this.state.cellProperties.width);
+        var gridWidth = _this.state.containerProperties.width;
+        var gridHeight = _this.state.containerProperties.height;
+        if (deltaY < 0) {
+            _this.mainCtx.clearRect(0, _this.state.dynamicProperties.freezeY, gridWidth, _this.state.dynamicProperties.freezeY - deltaY);
+            //if (-deltaY > gridHeight) debugger;
+            var diff = 0;
+            var shift = 0;
+            if ((gridHeight * 3 + deltaY) > ((gridHeight * 2) + _this.state.dynamicProperties.freezeY)) {
+                shift = gridHeight * 3 + deltaY;
+            }
+            else {
+                shift = ((gridHeight * 2) + _this.state.dynamicProperties.freezeY);
+                diff = ((gridHeight * 2) + _this.state.dynamicProperties.freezeY) - (gridHeight * 3 + deltaY);
+            }
+            _this.mainCtx.drawImage(_this.grid, 0, shift, gridWidth, diff - deltaY, 0, _this.state.dynamicProperties.freezeY + diff, gridWidth, diff - deltaY);
+            _this.mainCtx.drawImage(_this.grid, 0, _this.state.dynamicProperties.freezeY, gridWidth, gridHeight, 0, _this.state.dynamicProperties.freezeY - deltaY, gridWidth, gridHeight);
         }
-        else if (deltaY != 0) {
-            deltaRows = Math.ceil(deltaY * yDir / _this.state.cellProperties.height);
+        else {
+            _this.mainCtx.drawImage(_this.grid, 0, _this.state.dynamicProperties.freezeY + deltaY, gridWidth, gridHeight, 0, _this.state.dynamicProperties.freezeY, gridWidth, gridHeight);
         }
-
-        touchEndTime = new Date().getTime();
-        updateStartRowCol(_this, deltaRows * yDir, deltaCols * xDir);
-
-        if (deltaRows >= 3 || deltaCols >= 2) {
-            var timeDiff = touchEndTime - touchStartTime;
-            if (timeDiff < 100) {
-                repeat = 2;
-            }
-            else if (timeDiff < 50) {
-                repeat = 4;
-            }
-            else if (timeDiff < 25) {
-                repeat = 6;
-            }
-            //d3.select("#events").append("div").text("multiplyFactor:" + multiplyFactor);
-            var counter = 1;
-            while (counter <= repeat) {
-                setTimeout(function () {
-                    updateStartRowCol(_this, deltaRows * yDir * repeat, deltaCols * xDir * repeat);
-                }, Math.pow(2, counter) * 10);
-                counter++;
-            }
-        }
-        touchStart = touchEnd;
-        touchStartTime = new Date().getTime();
     });
 
     d3.select(_this.eventLayer).on('touchend', function (e) {
         d3.event.preventDefault();
+
+        var gridWidth = _this.state.containerProperties.width;
+        var gridHeight = _this.state.containerProperties.height;
+        if (touchEnd === null) {
+            return;
+        }
+        var deltaX = touchEnd[0] - touchStart[0];
+        var deltaY = touchEnd[1] - touchStart[1];
+
+        if (deltaY < 0) {
+            var newRowIndex = _this.state.dynamicProperties.rowStartIndex;
+            var newDelta = 0;
+            for (rIndex = newRowIndex; rIndex < _this.state.dynamicProperties.currRowsWithHeight.length && deltaY < 0; rIndex++) {
+                if (0 < deltaY * -1) {
+                    newRowIndex++;
+                    deltaY += _this.state.dynamicProperties.currRowsWithHeight[rIndex];
+                    newDelta += _this.state.dynamicProperties.currRowsWithHeight[rIndex];
+                }
+                else {
+                    break;
+                }
+            }
+            if (newRowIndex != _this.state.dynamicProperties.rowStartIndex) {
+                internalTimer(deltaY * 1.5, function (perc) {
+                    _this.mainCtx.drawImage(_this.grid, 0, _this.state.dynamicProperties.freezeY + ((newDelta - deltaY) + (deltaY * perc)), gridWidth, gridHeight, 0, _this.state.dynamicProperties.freezeY, gridWidth, gridHeight);
+                    if (perc === 1) {
+                        CanvasGrid.updateProp(_this, "rowStartIndex", newRowIndex);
+                    }
+                });
+            }
+            else {
+                console.log("This should never happen if we scroll only up");
+                internalTimer(100, function (perc) {
+                    _this.mainCtx.drawImage(_this.grid, 0, _this.state.dynamicProperties.freezeY - deltaY + (deltaY * perc), gridWidth, gridHeight, 0, _this.state.dynamicProperties.freezeY, gridWidth, gridHeight);
+                });
+            }
+        }
+        else {
+            internalTimer(100, function (perc) {
+                _this.mainCtx.drawImage(_this.grid, 0, _this.state.dynamicProperties.freezeY, gridWidth, gridHeight, 0, _this.state.dynamicProperties.freezeY + deltaY - (deltaY * perc), gridWidth, gridHeight);
+            });
+        }
     });
+
+    function internalTimer(timerMilliSecond, cb) {
+        d3.timer(function (x) {
+            if (x > timerMilliSecond) {
+                cb(1);
+                return true;
+            }
+            else {
+                cb(x / timerMilliSecond);
+                return false;
+            }
+        }, 0, +new Date());
+    }
 
     //Key events
     var keyDownLock = false;
@@ -157,56 +202,54 @@ CanvasGrid.bindEvents = function (_this) {
         if (keyDownLock === true)
             return;
 
-        keyDownLock = true;
         var deltaRows = 0;
         var deltaCols = 0;
         //down
         if (e.keyCode === 40) {
             deltaRows = 1;
-            //updateStartRowCol(_this, 1, 0);
         }
             //up
         else if (e.keyCode === 38) {
             deltaRows = -1;
-            //updateStartRowCol(_this, -1, 0);
         }
             //right
         else if (e.keyCode === 39) {
             deltaCols = 1;
-            //updateStartRowCol(_this, 0, 1);
         }
             //left
         else if (e.keyCode === 37) {
             deltaCols = -1;
-            //updateStartRowCol(_this, 0, -1);
         }
             //page down
         else if (e.keyCode === 34) {
-            deltaRows = _this.state.dynamicProperties.rowEndIndex - _this.state.dynamicProperties.rowStartIndex;
-            //updateStartRowCol(_this, , 0);
+            deltaRows = (_this.state.dynamicProperties.rowEndIndex - _this.state.dynamicProperties.rowStartIndex) + 1;
         }
             //page up
         else if (e.keyCode === 33) {
-            deltaRows = -(_this.state.dynamicProperties.rowEndIndex - _this.state.dynamicProperties.rowStartIndex);
-            //updateStartRowCol(_this, -(_this.state.dynamicProperties.rowEndIndex - _this.state.dynamicProperties.rowStartIndex), 0);
+            deltaRows = -((_this.state.dynamicProperties.rowEndIndex - _this.state.dynamicProperties.rowStartIndex) + 1);
         }
             //end
         else if (e.keyCode === 35) {
             deltaCols = -_this.state.dynamicProperties.colStartIndex;
-            //updateStartRowCol(_this, 0, -_this.state.dynamicProperties.colStartIndex);
         }
             //home
         else if (e.keyCode === 36) {
             deltaCols = -_this.state.dynamicProperties.colStartIndex;
-            //updateStartRowCol(_this, 0, -_this.state.dynamicProperties.colStartIndex);
         }
         else {
             console.log(e.keyCode);
         }
-        updateStartRowCol(_this, deltaRows, deltaCols);
-        setTimeout(function () {
-            keyDownLock = false;
-        }, 0)
+        if (deltaCols != 0 || deltaRows != 0) {
+
+            keyDownLock = true;
+            setTimeout(function () {
+                keyDownLock = false;
+            }, 0);
+
+            updateStartRowCol(_this, deltaRows, deltaCols);
+            e.preventDefault();
+        }
+
     });
 
     var updateStartRowColLock = false;
@@ -297,7 +340,6 @@ CanvasGrid.render = function (_this) {
     _this.state.dynamicProperties.rowStartIndex = +_this.state.dynamicProperties.rowStartIndex;
     _this.state.dynamicProperties.colStartIndex = +_this.state.dynamicProperties.colStartIndex;
 
-
     if (_this.state.dynamicProperties.colStartIndex < _this.state.dynamicProperties.freezeColIndex)
         _this.state.dynamicProperties.colStartIndex = _this.state.dynamicProperties.freezeColIndex;
     if (_this.state.dynamicProperties.rowStartIndex < _this.state.dynamicProperties.freezeRowIndex)
@@ -330,8 +372,8 @@ CanvasGrid.render = function (_this) {
 
     if (_this.state.gridProperties.height !== gridHeight) {
         _this.state.gridProperties.height = gridHeight;
-        _this.grid.height = _this.state.gridProperties.height;
-        _this.cell.height = _this.state.gridProperties.height;
+        _this.grid.height = _this.state.gridProperties.height * 3;
+        _this.cell.height = _this.state.gridProperties.height * 3;
         _this.mainGrid.height = _this.state.gridProperties.height;
         _this.eventLayer.style.height = _this.state.gridProperties.height + 'px';
     }
@@ -340,8 +382,37 @@ CanvasGrid.render = function (_this) {
 };
 
 CanvasGrid.renderGrid = function (_this) {
+
     var gridWidth = _this.state.containerProperties.width;
     var gridHeight = _this.state.containerProperties.height;
+
+    console.log("CanvasGrid.renderGrid called:", _this.state.dynamicProperties.rowStartIndex, _this.state.dynamicProperties.colStartIndex);
+    if (_this.state.dynamicProperties.rowStartIndexOld == undefined || _this.state.dynamicProperties.rowStartIndexOld < _this.state.dynamicProperties.rowStartIndex) {
+        var copyHeight = _this.state.dynamicProperties.freezeY;
+        for (rI = _this.state.dynamicProperties.rowStartIndexOld; rI < _this.state.dynamicProperties.rowStartIndex; rI++) {
+            copyHeight += _this.state.dynamicProperties.currRowsWithHeight[rI];
+        }
+        _this.ctx.drawImage(_this.grid, 0, gridHeight * 2 + (copyHeight - _this.state.dynamicProperties.freezeY), gridWidth, gridHeight - (copyHeight - _this.state.dynamicProperties.freezeY), 0, gridHeight * 2, gridWidth, gridHeight - (copyHeight - _this.state.dynamicProperties.freezeY));
+        _this.ctx.drawImage(_this.grid, 0, _this.state.dynamicProperties.freezeY, gridWidth, copyHeight - _this.state.dynamicProperties.freezeY, 0, gridHeight * 3 - (copyHeight - _this.state.dynamicProperties.freezeY), gridWidth, copyHeight - _this.state.dynamicProperties.freezeY);
+    }
+    else if (_this.state.dynamicProperties.rowStartIndexOld > _this.state.dynamicProperties.rowStartIndex) {
+        //debugger;
+        var copyHeight = _this.state.dynamicProperties.freezeY;
+        for (rI = _this.state.dynamicProperties.rowStartIndex; rI < _this.state.dynamicProperties.rowStartIndexOld; rI++) {
+            copyHeight += _this.state.dynamicProperties.currRowsWithHeight[rI];
+        }
+
+        //_this.ctx.drawImage(_this.grid, 0, (gridHeight * 2), gridWidth, gridHeight - 30, 0, (gridHeight * 2) + 30, gridWidth, gridHeight - 30);
+        //_this.ctx.clearRect(0, gridHeight * 2, gridWidth, 30);
+        //_this.ctx.drawImage(_this.grid, 0, _this.state.dynamicProperties.freezeY, gridWidth, copyHeight - _this.state.dynamicProperties.freezeY, 0, gridHeight * 3 - (copyHeight - _this.state.dynamicProperties.freezeY), gridWidth, copyHeight - _this.state.dynamicProperties.freezeY);
+    }
+
+    //// save canvas image as data url (png format by default)
+    //var dataURL = _this.grid.toDataURL();
+
+    //// set canvasImg image src to dataURL
+    //// so it can be saved as an image
+    //document.getElementById('canvasImg').src = dataURL;
 
     var rowNumberColWidth = 0;
     var currX = 0, currY = 0;
@@ -349,14 +420,18 @@ CanvasGrid.renderGrid = function (_this) {
     var gridDataStartX = 0, gridDataStartY = 0;
     var endX = 0, endY = 0;
 
-    var currRowsWithHeight = [];
-    var currColumnsWithWidth = [];
+    if (_this.state.dynamicProperties.currRowsWithHeight == undefined)
+        _this.state.dynamicProperties.currRowsWithHeight = [];
+    if (_this.state.dynamicProperties.currColumnsWithWidth == undefined)
+        _this.state.dynamicProperties.currColumnsWithWidth = [];
     var requestedData = [];
     var redraw = false;
 
     var nullValues = {};
-    function renderCell(currRow, currCol) {
-        _this.state.dynamicProperties.rowEndIndex = currRow;
+    function renderCell(currRow, currCol, isExtraRow) {
+        if (isExtraRow !== true) {
+            _this.state.dynamicProperties.rowEndIndex = currRow - 1;
+        }
         _this.state.dynamicProperties.colEndIndex = currCol;
         var cellValue = null;
         var cellProperties = _this.state.cellProperties;
@@ -378,70 +453,79 @@ CanvasGrid.renderGrid = function (_this) {
             cellValue = cellValue.text;
         }
 
-        if (currRowsWithHeight[currRow] == undefined || currRowsWithHeight[currRow] < cellProperties.height) {
-            currRowsWithHeight[currRow] = cellProperties.height;
+        if (_this.state.dynamicProperties.currRowsWithHeight[currRow] == undefined || _this.state.dynamicProperties.currRowsWithHeight[currRow] < cellProperties.height) {
+            _this.state.dynamicProperties.currRowsWithHeight[currRow] = cellProperties.height;
             redraw = true;
         }
 
-        if (currColumnsWithWidth[currCol] == undefined && _this.callbackMethods['getColumnWidth']) {
-            currColumnsWithWidth[currCol] = _this.callbackMethods['getColumnWidth'].callback(currCol);
+        if (_this.state.dynamicProperties.currColumnsWithWidth[currCol] == undefined && _this.callbackMethods['getColumnWidth']) {
+            _this.state.dynamicProperties.currColumnsWithWidth[currCol] = _this.callbackMethods['getColumnWidth'].callback(currCol);
         }
 
-        if (currColumnsWithWidth[currCol] == undefined || currColumnsWithWidth[currCol] < cellProperties.width) {
-            currColumnsWithWidth[currCol] = cellProperties.width;
+        if (_this.state.dynamicProperties.currColumnsWithWidth[currCol] == undefined || _this.state.dynamicProperties.currColumnsWithWidth[currCol] < cellProperties.width) {
+            _this.state.dynamicProperties.currColumnsWithWidth[currCol] = cellProperties.width;
             redraw = true;
         }
 
-        var updatedStats = CanvasGrid.drawCell(_this, currX, currY, currX + currColumnsWithWidth[currCol], currY + currRowsWithHeight[currRow], cellValue, cellProperties, true);
+        var updatedStats = CanvasGrid.drawCell(_this, currX, currY, currX + _this.state.dynamicProperties.currColumnsWithWidth[currCol], currY + _this.state.dynamicProperties.currRowsWithHeight[currRow], cellValue, cellProperties, true);
         if (updatedStats != null) {
-            if (updatedStats[0] > currColumnsWithWidth[currCol]) {
-                currColumnsWithWidth[currCol] = updatedStats[0];
+            if (updatedStats[0] > _this.state.dynamicProperties.currColumnsWithWidth[currCol]) {
+                _this.state.dynamicProperties.currColumnsWithWidth[currCol] = updatedStats[0];
                 redraw = true;
             }
-            if (updatedStats[1] > currRowsWithHeight[currRow]) {
-                currRowsWithHeight[currRow] = updatedStats[1];
+            if (updatedStats[1] > _this.state.dynamicProperties.currRowsWithHeight[currRow]) {
+                _this.state.dynamicProperties.currRowsWithHeight[currRow] = updatedStats[1];
                 redraw = true;
             }
         }
 
-        currX += currColumnsWithWidth[currCol];
+        currX += _this.state.dynamicProperties.currColumnsWithWidth[currCol];
     }
 
-    function renderRow(currRow) {
+    function renderRow(currRow, isExtraRow) {
         currX = 0;
-        if (currRowsWithHeight[currRow] == undefined && _this.callbackMethods['getRowHeight']) {
-            currRowsWithHeight[currRow] = _this.callbackMethods['getRowHeight'].callback(currRow);
+        if (_this.state.dynamicProperties.currRowsWithHeight[currRow] == undefined && _this.callbackMethods['getRowHeight']) {
+            _this.state.dynamicProperties.currRowsWithHeight[currRow] = _this.callbackMethods['getRowHeight'].callback(currRow);
         }
         for (var currCol = 0; currCol < _this.state.dynamicProperties.freezeColIndex && currX <= gridWidth; currCol++) {
-            renderCell(currRow, currCol);
+            renderCell(currRow, currCol, isExtraRow);
         }
-        if (_this.state.gridProperties.freezeX < currX) {
-            _this.state.gridProperties.freezeX = currX;
+        if (_this.state.dynamicProperties.freezeX < currX) {
+            _this.state.dynamicProperties.freezeX = currX;
         }
 
         for (var currCol = _this.state.dynamicProperties.colStartIndex; currCol < _this.state.gridProperties.cols && currX <= gridWidth; currCol++) {
-            renderCell(currRow, currCol);
+            renderCell(currRow, currCol, isExtraRow);
         }
-        currY += currRowsWithHeight[currRow];
+        currY += _this.state.dynamicProperties.currRowsWithHeight[currRow];
     }
 
     function renderAllRows() {
         redraw = false;
         currY = 0;
-        _this.state.gridProperties.freezeX = 0;
-        _this.state.gridProperties.freezeY = 0;
-        for (var currRow = 0; currRow < _this.state.dynamicProperties.freezeRowIndex && currY <= gridHeight; currRow++) {
+        _this.state.dynamicProperties.freezeX = 0;
+        _this.state.dynamicProperties.freezeY = 0;
+        var currRow = 0
+        for (currRow = 0; currRow < _this.state.dynamicProperties.freezeRowIndex && currY <= gridHeight; currRow++) {
             renderRow(currRow);
         }
-        if (_this.state.gridProperties.freezeY < currY) {
-            _this.state.gridProperties.freezeY = currY;
+        if (_this.state.dynamicProperties.freezeY < currY) {
+            _this.state.dynamicProperties.freezeY = currY;
         }
 
-        for (var currRow = _this.state.dynamicProperties.rowStartIndex; currRow < _this.state.gridProperties.rows && currY <= gridHeight; currRow++) {
+        for (currRow = _this.state.dynamicProperties.rowStartIndex; currRow < _this.state.gridProperties.rows && currY <= gridHeight; currRow++) {
             renderRow(currRow);
         }
         if (redraw == false) {
             _this.mainCtx.drawImage(_this.grid, 0, 0, gridWidth, gridHeight, 0, 0, gridWidth, gridHeight);
+            for (; currRow < _this.state.gridProperties.rows && currY <= gridHeight * 2 - 30; currRow++) {
+                renderRow(currRow, true);
+            }
+            _this.state.dynamicProperties.rowStartIndexOld = _this.state.dynamicProperties.rowStartIndex;
+            _this.state.dynamicProperties.colStartIndexOld = _this.state.dynamicProperties.colStartIndex;
+
+            _this.state.dynamicProperties.rowEndIndexOld = _this.state.dynamicProperties.rowEndIndex;
+            _this.state.dynamicProperties.colEndIndexOld = _this.state.dynamicProperties.colEndIndex;
         }
         else {
             renderAllRows();
@@ -449,174 +533,21 @@ CanvasGrid.renderGrid = function (_this) {
     }
     renderAllRows();
     if (Object.keys(nullValues).length > 0 && _this.callbackMethods['getData']) {
-        //if (_this.state.dynamicProperties.getDataTimeoutInterval != null) {
-        //    clearTimeout(_this.state.dynamicProperties.getDataTimeoutInterval);
-        //}
-        //_this.state.dynamicProperties.getDataTimeoutInterval = setTimeout(function () {
-        //    drawGridData(_this, null, '?');
-        //}, 10);
         _this.callbackMethods['getData'].counter++;
+        //console.log("Calling Get Data for ", _this.callbackMethods['getData'].counter);
         setTimeout(function () {
             _this.callbackMethods['getData'].callback(_this.callbackMethods['getData'].counter, nullValues, function (counter, data) {
+                //console.log("returned Get Data", counter);
                 if (_this.callbackMethods['getData'].counter === counter) {
-                    if (_this.state.dynamicProperties.getDataTimeoutInterval != null) {
-                        clearTimeout(_this.state.dynamicProperties.getDataTimeoutInterval);
-                    }
                     nullValues = data;
                     renderAllRows();
-                    localData = null;
+                    data = null;
                 }
             });
         }, 10);
     }
-
-    //if (_this.callbackMethods['getData']) {
-
-    //}
-    //else {
-    //    drawGridData(_this, null, '-');
-    //}
-
-
     _this.eventLayer.focus();
     return;
-    //Clear entire canvas
-    //_this.ctx.clearRect(0, 0, _this.grid.width, _this.grid.height);
-
-    //var gridWidth = _this.state.containerProperties.width;// - 30;
-    //var gridHeight = _this.state.containerProperties.height;// - 30;
-    //_this.state.dynamicProperties.rowEndIndex = _this.state.dynamicProperties.rowStartIndex + Math.ceil((gridHeight - (_this.state.gridProperties.showColumnName == true ? 1 : 0) * _this.state.cellProperties.height) / _this.state.cellProperties.height) - 1;
-    //if (_this.state.dynamicProperties.rowEndIndex > (_this.state.gridProperties.rows - 1))
-    //    _this.state.dynamicProperties.rowEndIndex = (_this.state.gridProperties.rows - 1);
-
-    //var currCol = _this.state.dynamicProperties.colStartIndex;
-    //var currRow = _this.state.dynamicProperties.rowStartIndex;
-    //var currX = 0, currY = 0;
-    //var startX = 0, startY = 0;
-    //var gridDataStartX = 0, gridDataStartY = 0;
-    //var endX = 0, endY = 0;
-    //var currWidth = _this.state.cellProperties.width;
-    //var currHeight = _this.state.cellProperties.height;
-
-    //if (_this.state.gridProperties.showRowNumber == true) {
-    //    currRow--;
-    //    var maxNumberText = CanvasGrid.measureText(_this, ' ' + (_this.state.dynamicProperties.rowEndIndex + 1) + ' ', _this.state.cellProperties.textStyle);
-    //    currWidth = Math.ceil(maxNumberText.width);
-    //    gridDataStartX = currWidth;
-    //    // draw row number
-    //    while (currY <= _this.grid.height && currRow <= _this.state.dynamicProperties.rowEndIndex) {
-    //        if (currRow >= _this.state.dynamicProperties.rowStartIndex) {
-    //            startX = 0;
-    //            endX = startX + currWidth;
-    //            startY = currY;
-    //            endY = currY + currHeight;
-    //            CanvasGrid.drawCell(_this, startX, startY, endX, endY, '' + (currRow + 1), _this.state.headerProperties, true);
-    //        }
-    //        else if (_this.state.gridProperties.showColumnName == true) {
-    //            startX = 0;
-    //            endX = startX + currWidth;
-    //            startY = currY;
-    //            endY = currY + currHeight;
-    //            CanvasGrid.drawCell(_this, startX, startY, endX, endY, '', _this.state.headerProperties, true);
-    //        }
-    //        else {
-    //            currY -= currHeight;
-    //        }
-    //        // update Y position and row index
-    //        currY += currHeight;
-    //        currRow++;
-    //    }
-    //}
-
-    //_this.state.dynamicProperties.colEndIndex = _this.state.dynamicProperties.colStartIndex + Math.ceil((gridWidth - gridDataStartX) / _this.state.cellProperties.width) - 1;
-    //if (_this.state.dynamicProperties.colEndIndex > (_this.state.gridProperties.cols - 1))
-    //    _this.state.dynamicProperties.colEndIndex = (_this.state.gridProperties.cols - 1);
-
-    //if (_this.state.gridProperties.showColumnName == true) {
-    //    currWidth = _this.state.cellProperties.width;
-    //    currHeight = _this.state.cellProperties.height;
-    //    gridDataStartY = currHeight;
-    //    currX = gridDataStartX;
-    //    // draw col number
-    //    while (currX <= _this.grid.width && currCol <= _this.state.dynamicProperties.colEndIndex) {
-    //        startY = 0;
-    //        endY = currHeight;
-    //        startX = currX;
-    //        endX = currX + currWidth;
-    //        CanvasGrid.drawCell(_this, startX, startY, endX, endY, 'C' + (currCol + 1), _this.state.headerProperties, true);
-    //        // update X position and column index
-    //        currX += currWidth;
-    //        currCol++;
-    //    }
-    //}
-
-    //if (_this.callbackMethods['getData']) {
-    //    if (_this.state.dynamicProperties.getDataTimeoutInterval != null) {
-    //        clearTimeout(_this.state.dynamicProperties.getDataTimeoutInterval);
-    //    }
-    //    _this.state.dynamicProperties.getDataTimeoutInterval = setTimeout(function () {
-    //        drawGridData(_this, null, '?');
-    //    }, 10);
-    //    _this.callbackMethods['getData'].counter++;
-    //    _this.callbackMethods['getData'].callback(_this.callbackMethods['getData'].counter, _this.state.dynamicProperties.rowStartIndex, _this.state.dynamicProperties.colStartIndex, _this.state.dynamicProperties.rowEndIndex, _this.state.dynamicProperties.colEndIndex, function (counter, data) {
-    //        if (_this.callbackMethods['getData'].counter === counter) {
-    //            if (_this.state.dynamicProperties.getDataTimeoutInterval != null) {
-    //                clearTimeout(_this.state.dynamicProperties.getDataTimeoutInterval);
-    //            }
-    //            drawGridData(_this, data, ' ');
-    //        }
-    //    });
-    //}
-    //else {
-    //    drawGridData(_this, null, '-');
-    //}
-
-    //function drawGridData(_this, gridData, defaultText) {
-    //    if (_this.state.dynamicProperties.gridDataRenderTimeoutInterval != null) {
-    //        clearInterval(_this.state.dynamicProperties.gridDataRenderTimeoutInterval);
-    //    }
-    //    _this.state.dynamicProperties.gridDataRenderTimeoutInterval = setTimeout(function () {
-    //        drawGridDataMain(_this, gridData, defaultText);
-    //    }, 1);
-    //}
-    //function drawGridDataMain(_this, gridData, defaultText) {
-    //    if (gridData == null) {
-    //        gridData = new Array(_this.state.dynamicProperties.rowEndIndex - _this.state.dynamicProperties.rowStartIndex + 1);
-    //    }
-
-    //    currWidth = _this.state.cellProperties.width;
-    //    currHeight = _this.state.cellProperties.height;
-    //    currY = gridDataStartY;
-    //    currRow = 0;
-    //    while (currY <= _this.grid.height && currRow < gridData.length) {
-    //        startY = currY;
-    //        endY = currY + currHeight;
-    //        var rowData = gridData[currRow];
-    //        if (rowData == null) {
-    //            rowData = new Array(_this.state.dynamicProperties.colEndIndex - _this.state.dynamicProperties.colStartIndex + 1)
-    //        }
-
-    //        currX = gridDataStartX;
-    //        currCol = 0;
-    //        while (currX <= _this.grid.width && currCol < rowData.length) {
-    //            startX = currX;
-    //            endX = currX + currWidth;
-
-    //            CanvasGrid.drawCell(_this, startX, startY, endX, endY, rowData[currCol] == null ? defaultText : rowData[currCol], _this.state.cellProperties, true);
-    //            // update Y position and row index
-    //            currX += currWidth;
-    //            currCol++;
-    //        }
-    //        // update Y position and row index
-    //        currY += currHeight;
-    //        currRow++;
-    //    }
-    //    gridData = null;
-    //    _this.mainCtx.drawImage(_this.grid, 0, 0, 2000, 1000, 0, 0, 2000, 1000);
-    //}
-    //console.log(_this.state.dynamicProperties.rowStartIndex, _this.state.dynamicProperties.rowEndIndex);
-    //_this.eventLayer.focus();
-    //var event = new CustomEvent('get-data', { 'startCol': elem.dataset.time });
 };
 
 CanvasGrid.drawCell = function (_this, x0, y0, x1, y1, cellValue, cellProperties) {
@@ -698,6 +629,9 @@ CanvasGrid.drawCell = function (_this, x0, y0, x1, y1, cellValue, cellProperties
         x1 = matrix[0] + x0;
         y1 = matrix[1] + y0;
     }
+    if (cellProperties != null && cellProperties.background != null && cellProperties.background.img != null) {
+        CanvasGrid.drawImage(_this, x0, y0, x1, y1, cellProperties.background.img);
+    }
     _this.ctx.drawImage(_this.cell, x0, y0, (x1 - x0), (y1 - y0), x0, y0, (x1 - x0), (y1 - y0));
     return matrix;
 }
@@ -716,6 +650,16 @@ CanvasGrid.measureText = function (_this, text, textStyle) {
     _this.cellCtx.font = fontText;
 
     return _this.cellCtx.measureText(text);
+}
+
+CanvasGrid.drawImage = function (_this, x0, y0, x1, y1, image) {
+    var imageObj = new Image();
+
+    imageObj.onload = function () {
+        _this.mainCtx.drawImage(imageObj, x0, y0, x1 - x0, y1 - y0);
+        _this.ctx.drawImage(imageObj, x0, y0, x1 - x0, y1 - y0);
+    };
+    imageObj.src = image.url;//'http://www.html5canvastutorials.com/demos/assets/darth-vader.jpg';
 }
 
 CanvasGrid.drawText = function (_this, x0, y0, x1, y1, cellValue, textStyle) {
@@ -765,8 +709,8 @@ CanvasGrid.drawText = function (_this, x0, y0, x1, y1, cellValue, textStyle) {
     else if (textStyle.wrap === 2) {
         var measure = _this.cellCtx.measureText(text);
         var currWidth = measure.width + 10;
-        if (currWidth > _this.state.gridProperties.width - _this.state.gridProperties.freezeX) {
-            currWidth = _this.state.gridProperties.width - _this.state.gridProperties.freezeX;
+        if (currWidth > _this.state.gridProperties.width - _this.state.dynamicProperties.freezeX) {
+            currWidth = _this.state.gridProperties.width - _this.state.dynamicProperties.freezeX;
         }
         var maxWidth = (x1 - x0);
         if (maxWidth < currWidth) {

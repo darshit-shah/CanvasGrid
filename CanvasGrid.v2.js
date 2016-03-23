@@ -46,12 +46,13 @@ CanvasGrid.createdCallback = function () {
     _this.cell.style.top = 0;
     _this.cellCtx = _this.cell.getContext('2d');
 
-    //Canvas element for caching
-    _this.cacheCell = document.createElement('canvas');
-    _this.cacheCell.style.position = 'relative';
-    _this.cacheCell.style.left = 0;
-    _this.cacheCell.style.top = 0;
-    _this.cacheCellCtx = _this.cell.getContext('2d');
+    _this.state.dynamicProperties.cacheImages = {};
+    ////Canvas element for caching
+    //_this.cacheCell = document.createElement('canvas');
+    //_this.cacheCell.style.position = 'relative';
+    //_this.cacheCell.style.left = 0;
+    //_this.cacheCell.style.top = 0;
+    //_this.cacheCellCtx = _this.cell.getContext('2d');
 
     //extra layer to handle events
     _this.eventLayer = document.createElement('div');
@@ -503,7 +504,7 @@ CanvasGrid.render = function (_this) {
         _this.state.gridProperties.width = gridWidth;
         _this.grid.width = _this.state.gridProperties.width * 3;
         _this.cell.width = _this.state.gridProperties.width * 3;
-        _this.cacheCell.width = _this.state.cellProperties.width;
+        //_this.cacheCell.width = _this.state.cellProperties.width;
         _this.mainGrid.width = _this.state.gridProperties.width;
         _this.eventLayer.style.width = _this.state.gridProperties.width + 'px';
     }
@@ -512,7 +513,7 @@ CanvasGrid.render = function (_this) {
         _this.state.gridProperties.height = gridHeight;
         _this.grid.height = _this.state.gridProperties.height * 3;
         _this.cell.height = _this.state.gridProperties.height * 3;
-        _this.cacheCell.height = _this.state.cellProperties.height;
+        //_this.cacheCell.height = _this.state.cellProperties.height;
         _this.mainGrid.height = _this.state.gridProperties.height;
         _this.eventLayer.style.height = _this.state.gridProperties.height + 'px';
     }
@@ -535,11 +536,10 @@ CanvasGrid.renderGrid = function (_this) {
     _this.cellCtx.fillStyle = _this.state.cellProperties.background.color;
     _this.cellCtx.fill();
 
-    _this.state.dynamicProperties.cacheImages = {};
-    _this.cacheCellCtx.beginPath();
-    _this.cacheCellCtx.rect(0, 0, _this.state.cellProperties.width, _this.state.cellProperties.height);
-    _this.cacheCellCtx.fillStyle = _this.state.cellProperties.background.color;
-    _this.cacheCellCtx.fill();
+    //_this.cacheCellCtx.beginPath();
+    //_this.cacheCellCtx.rect(0, 0, _this.state.cellProperties.width, _this.state.cellProperties.height);
+    //_this.cacheCellCtx.fillStyle = _this.state.cellProperties.background.color;
+    //_this.cacheCellCtx.fill();
 
     var rowNumberColWidth = 0;
     var currX = 0, currY = 0;
@@ -760,10 +760,8 @@ CanvasGrid.renderGrid = function (_this) {
 
 CanvasGrid.drawCell = function (_this, x0, y0, x1, y1, cellValue, cellProperties) {
     if (cellValue == null) {
-        if (_this.state.dynamicProperties.cacheImages.hasOwnProperty(JSON.stringify(cellProperties))) {
-            //var cacheProperty = _this.state.dynamicProperties.cacheImages[JSON.stringify(cellProperties)];
-            //_this.ctx.drawImage(_this.cacheCell, 0, 0);
-            _this.ctx.putImageData(_this.state.dynamicProperties.cacheImage, x0, y0);
+        if (_this.state.dynamicProperties.cacheImages.hasOwnProperty(JSON.stringify(cellProperties) + "_" + (x1 - x0) + "_" + (y1 - y0))) {
+            _this.ctx.putImageData(_this.state.dynamicProperties.cacheImages[JSON.stringify(cellProperties) + "_" + (x1 - x0) + "_" + (y1 - y0)], x0, y0);
             return;
         }
     }
@@ -859,7 +857,7 @@ CanvasGrid.drawCell = function (_this, x0, y0, x1, y1, cellValue, cellProperties
         //_this.cacheCellCtx.fill();
 
         //_this.cacheCellCtx.drawImage(_this.cell, x0, y0, innerWidth, innerHeight, x0, y0, innerWidth, innerHeight);
-        _this.state.dynamicProperties.cacheImage = _this.cellCtx.getImageData(x0, y0, innerWidth, innerHeight);
+        _this.state.dynamicProperties.cacheImages[JSON.stringify(cellProperties) + "_" + (x1 - x0) + "_" + (y1 - y0)] = _this.cellCtx.getImageData(x0, y0, innerWidth, innerHeight);
         //// save canvas image as data url (png format by default)
         //var dataURL = _this.cell.toDataURL();
 
@@ -867,7 +865,7 @@ CanvasGrid.drawCell = function (_this, x0, y0, x1, y1, cellValue, cellProperties
         //// so it can be saved as an image
         //document.getElementById('canvasImg').src = dataURL;
         //debugger;
-        _this.state.dynamicProperties.cacheImages[JSON.stringify(cellProperties)] = { x: 0, y: 0, width: innerWidth, height: innerHeight };
+        //_this.state.dynamicProperties.cacheImages[JSON.stringify(cellProperties)] = { x: 0, y: 0, width: innerWidth, height: innerHeight };
     }
     return matrix;
 }

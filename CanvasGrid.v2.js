@@ -40,11 +40,11 @@ CanvasGrid.createdCallback = function () {
     _this.ctx = _this.grid.getContext('2d');
 
     //Canvas element for Cell
-    _this.cell = document.createElement('canvas');
-    _this.cell.style.position = 'relative';
-    _this.cell.style.left = 0;
-    _this.cell.style.top = 0;
-    _this.cellCtx = _this.cell.getContext('2d');
+    //_this.cell = document.createElement('canvas');
+    //_this.cell.style.position = 'relative';
+    //_this.cell.style.left = 0;
+    //_this.cell.style.top = 0;
+    //_this.cellCtx = _this.cell.getContext('2d');
 
     _this.state.dynamicProperties.cacheImages = {};
     ////Canvas element for caching
@@ -503,7 +503,7 @@ CanvasGrid.render = function (_this) {
     if (_this.state.gridProperties.width !== gridWidth) {
         _this.state.gridProperties.width = gridWidth;
         _this.grid.width = _this.state.gridProperties.width * 3;
-        _this.cell.width = _this.state.gridProperties.width * 3;
+        //_this.cell.width = _this.state.gridProperties.width * 3;
         //_this.cacheCell.width = _this.state.cellProperties.width;
         _this.mainGrid.width = _this.state.gridProperties.width;
         _this.eventLayer.style.width = _this.state.gridProperties.width + 'px';
@@ -512,7 +512,7 @@ CanvasGrid.render = function (_this) {
     if (_this.state.gridProperties.height !== gridHeight) {
         _this.state.gridProperties.height = gridHeight;
         _this.grid.height = _this.state.gridProperties.height * 3;
-        _this.cell.height = _this.state.gridProperties.height * 3;
+        //_this.cell.height = _this.state.gridProperties.height * 3;
         //_this.cacheCell.height = _this.state.cellProperties.height;
         _this.mainGrid.height = _this.state.gridProperties.height;
         _this.eventLayer.style.height = _this.state.gridProperties.height + 'px';
@@ -531,10 +531,10 @@ CanvasGrid.renderGrid = function (_this) {
     _this.ctx.fillStyle = _this.state.cellProperties.background.color;
     _this.ctx.fill();
 
-    _this.cellCtx.beginPath();
-    _this.cellCtx.rect(0, 0, _this.state.gridProperties.width * 3, _this.state.gridProperties.height * 3);
-    _this.cellCtx.fillStyle = _this.state.cellProperties.background.color;
-    _this.cellCtx.fill();
+    //_this.cellCtx.beginPath();
+    //_this.cellCtx.rect(0, 0, _this.state.gridProperties.width * 3, _this.state.gridProperties.height * 3);
+    //_this.cellCtx.fillStyle = _this.state.cellProperties.background.color;
+    //_this.cellCtx.fill();
 
     //_this.cacheCellCtx.beginPath();
     //_this.cacheCellCtx.rect(0, 0, _this.state.cellProperties.width, _this.state.cellProperties.height);
@@ -759,80 +759,85 @@ CanvasGrid.renderGrid = function (_this) {
 };
 
 CanvasGrid.drawCell = function (_this, x0, y0, x1, y1, cellValue, cellProperties) {
-    if (cellValue == null) {
-        if (_this.state.dynamicProperties.cacheImages.hasOwnProperty(JSON.stringify(cellProperties) + "_" + (x1 - x0) + "_" + (y1 - y0))) {
-            _this.ctx.putImageData(_this.state.dynamicProperties.cacheImages[JSON.stringify(cellProperties) + "_" + (x1 - x0) + "_" + (y1 - y0)], x0, y0);
-            return;
+    var drawBackground = true;
+    //if (_this.state.dynamicProperties.cacheImages.hasOwnProperty(JSON.stringify(cellProperties) + "_" + (x1 - x0) + "_" + (y1 - y0))) {
+    //    _this.ctx.putImageData(_this.state.dynamicProperties.cacheImages[JSON.stringify(cellProperties) + "_" + (x1 - x0) + "_" + (y1 - y0)], x0, y0);
+    //    drawBackground = false;
+    //}
+
+    if (drawBackground === true) {
+        // clear cell
+        _this.ctx.beginPath();
+        _this.ctx.rect(x0, y0, (x1 - x0), (y1 - y0));
+        _this.ctx.fillStyle = cellProperties.background.color;
+        _this.ctx.fill();
+
+        // border left
+        //var p = _this.ctx.getImageData(x0, y0 + 1, 1, 1).data;
+        //var hex = "#" + ("000000" + rgbToHex(p[0], p[1], p[2])).slice(-6);
+        _this.ctx.beginPath();
+        _this.ctx.moveTo(Math.floor(x0) + 0.5, Math.floor(y1) + 0.5);
+        _this.ctx.lineTo(Math.floor(x0) + 0.5, Math.floor(y0) + 0.5);
+        if (cellProperties.hasOwnProperty('border') && cellProperties.border.hasOwnProperty('left')) {
+            _this.ctx.strokeStyle = cellProperties.border.left.color;
+            _this.ctx.lineWidth = cellProperties.border.left.width;
         }
-    }
+        else {
+            _this.ctx.strokeStyle = _this.state.gridProperties.background.color;
+            _this.ctx.lineWidth = 0.5;
+        }
+        _this.ctx.lineCap = 'round';
+        _this.ctx.stroke();
 
-    // clear cell
-    _this.cellCtx.beginPath();
-    _this.cellCtx.rect(x0, y0, (x1 - x0), (y1 - y0));
-    _this.cellCtx.fillStyle = cellProperties.background.color;
-    _this.cellCtx.fill();
+        // border top
+        _this.ctx.beginPath();
+        _this.ctx.moveTo(Math.floor(x0) + 0.5, Math.floor(y0) + 0.5);
+        _this.ctx.lineTo(Math.floor(x1) + 0.5, Math.floor(y0) + 0.5);
+        if (cellProperties.hasOwnProperty('border') && cellProperties.border.hasOwnProperty('top')) {
+            _this.ctx.strokeStyle = cellProperties.border.top.color;
+            _this.ctx.lineWidth = cellProperties.border.top.width;
+        }
+        else {
+            _this.ctx.strokeStyle = _this.state.gridProperties.background.color;
+            _this.ctx.lineWidth = 0.5;
+        }
+        _this.ctx.lineCap = 'round';
+        _this.ctx.stroke();
 
-    // border left
-    //var p = _this.cellCtx.getImageData(x0, y0 + 1, 1, 1).data;
-    //var hex = "#" + ("000000" + rgbToHex(p[0], p[1], p[2])).slice(-6);
-    _this.cellCtx.beginPath();
-    _this.cellCtx.moveTo(Math.floor(x0) + 0.5, Math.floor(y1) + 0.5);
-    _this.cellCtx.lineTo(Math.floor(x0) + 0.5, Math.floor(y0) + 0.5);
-    if (cellProperties.hasOwnProperty('border') && cellProperties.border.hasOwnProperty('left')) {
-        _this.cellCtx.strokeStyle = cellProperties.border.left.color;
-        _this.cellCtx.lineWidth = cellProperties.border.left.width;
-    }
-    else {
-        _this.cellCtx.strokeStyle = _this.state.gridProperties.background.color;
-        _this.cellCtx.lineWidth = 0.5;
-    }
-    _this.cellCtx.lineCap = 'round';
-    _this.cellCtx.stroke();
+        // border right
+        _this.ctx.beginPath();
+        _this.ctx.moveTo(Math.floor(x1) + 0.5, Math.floor(y0) + 0.5);
+        _this.ctx.lineTo(Math.floor(x1) + 0.5, Math.floor(y1) + 0.5);
+        if (cellProperties.hasOwnProperty('border') && cellProperties.border.hasOwnProperty('right')) {
+            _this.ctx.strokeStyle = cellProperties.border.right.color;
+            _this.ctx.lineWidth = cellProperties.border.right.width;
+        }
+        else {
+            _this.ctx.strokeStyle = _this.state.gridProperties.background.color;
+            _this.ctx.lineWidth = 0.5;
+        }
+        _this.ctx.lineCap = 'round';
+        _this.ctx.stroke();
 
-    // border top
-    _this.cellCtx.beginPath();
-    _this.cellCtx.moveTo(Math.floor(x0) + 0.5, Math.floor(y0) + 0.5);
-    _this.cellCtx.lineTo(Math.floor(x1) + 0.5, Math.floor(y0) + 0.5);
-    if (cellProperties.hasOwnProperty('border') && cellProperties.border.hasOwnProperty('top')) {
-        _this.cellCtx.strokeStyle = cellProperties.border.top.color;
-        _this.cellCtx.lineWidth = cellProperties.border.top.width;
-    }
-    else {
-        _this.cellCtx.strokeStyle = _this.state.gridProperties.background.color;
-        _this.cellCtx.lineWidth = 0.5;
-    }
-    _this.cellCtx.lineCap = 'round';
-    _this.cellCtx.stroke();
+        // border bottom
+        _this.ctx.beginPath();
+        _this.ctx.moveTo(Math.floor(x1) + 0.5, Math.floor(y1) + 0.5);
+        _this.ctx.lineTo(Math.floor(x0) + 0.5, Math.floor(y1) + 0.5);
+        if (cellProperties.hasOwnProperty('border') && cellProperties.border.hasOwnProperty('bottom')) {
+            _this.ctx.strokeStyle = cellProperties.border.bottom.color;
+            _this.ctx.lineWidth = cellProperties.border.bottom.width;
+        }
+        else {
+            _this.ctx.strokeStyle = _this.state.gridProperties.background.color;
+            _this.ctx.lineWidth = 0.5;
+        }
+        _this.ctx.lineCap = 'round';
+        _this.ctx.stroke();
 
-    // border right
-    _this.cellCtx.beginPath();
-    _this.cellCtx.moveTo(Math.floor(x1) + 0.5, Math.floor(y0) + 0.5);
-    _this.cellCtx.lineTo(Math.floor(x1) + 0.5, Math.floor(y1) + 0.5);
-    if (cellProperties.hasOwnProperty('border') && cellProperties.border.hasOwnProperty('right')) {
-        _this.cellCtx.strokeStyle = cellProperties.border.right.color;
-        _this.cellCtx.lineWidth = cellProperties.border.right.width;
+        //_this.state.dynamicProperties.cacheImages[JSON.stringify(cellProperties) + "_" + (x1 - x0) + "_" + (y1 - y0)] = _this.ctx.getImageData(x0, y0, x1, y1);
+        //console.log(JSON.stringify(cellProperties) + "_" + (x1 - x0) + "_" + (y1 - y0));
+        //console.log(Object.keys(_this.state.dynamicProperties.cacheImages).length);
     }
-    else {
-        _this.cellCtx.strokeStyle = _this.state.gridProperties.background.color;
-        _this.cellCtx.lineWidth = 0.5;
-    }
-    _this.cellCtx.lineCap = 'round';
-    _this.cellCtx.stroke();
-
-    // border bottom
-    _this.cellCtx.beginPath();
-    _this.cellCtx.moveTo(Math.floor(x1) + 0.5, Math.floor(y1) + 0.5);
-    _this.cellCtx.lineTo(Math.floor(x0) + 0.5, Math.floor(y1) + 0.5);
-    if (cellProperties.hasOwnProperty('border') && cellProperties.border.hasOwnProperty('bottom')) {
-        _this.cellCtx.strokeStyle = cellProperties.border.bottom.color;
-        _this.cellCtx.lineWidth = cellProperties.border.bottom.width;
-    }
-    else {
-        _this.cellCtx.strokeStyle = _this.state.gridProperties.background.color;
-        _this.cellCtx.lineWidth = 0.5;
-    }
-    _this.cellCtx.lineCap = 'round';
-    _this.cellCtx.stroke();
 
     var matrix = null;
     if (cellValue == null) {
@@ -846,33 +851,33 @@ CanvasGrid.drawCell = function (_this, x0, y0, x1, y1, cellValue, cellProperties
     if (cellProperties != null && cellProperties.background != null && cellProperties.background.img != null) {
         CanvasGrid.drawImage(_this, x0, y0, x1, y1, cellProperties.background.img);
     }
-    var innerWidth = (x1 - x0);
-    var innerHeight = (y1 - y0);
-    _this.ctx.drawImage(_this.cell, x0, y0, innerWidth, innerHeight, x0, y0, innerWidth, innerHeight);
-    if (cellValue === "?") {
-        //debugger;
-        //_this.cacheCellCtx.beginPath();
-        //_this.cacheCellCtx.rect(0, 0, _this.state.cellProperties.width, _this.state.cellProperties.height);
-        //_this.cacheCellCtx.fillStyle = _this.state.cellProperties.background.color;
-        //_this.cacheCellCtx.fill();
+    //var innerWidth = (x1 - x0);
+    //var innerHeight = (y1 - y0);
+    //_this.ctx.drawImage(_this.grid, x0, y0, innerWidth, innerHeight, x0, y0, innerWidth, innerHeight);
+    //if (cellValue === "?") {
+    //    //debugger;
+    //    //_this.cacheCellCtx.beginPath();
+    //    //_this.cacheCellCtx.rect(0, 0, _this.state.cellProperties.width, _this.state.cellProperties.height);
+    //    //_this.cacheCellCtx.fillStyle = _this.state.cellProperties.background.color;
+    //    //_this.cacheCellCtx.fill();
 
-        //_this.cacheCellCtx.drawImage(_this.cell, x0, y0, innerWidth, innerHeight, x0, y0, innerWidth, innerHeight);
-        _this.state.dynamicProperties.cacheImages[JSON.stringify(cellProperties) + "_" + (x1 - x0) + "_" + (y1 - y0)] = _this.cellCtx.getImageData(x0, y0, innerWidth, innerHeight);
-        //// save canvas image as data url (png format by default)
-        //var dataURL = _this.cell.toDataURL();
+    //    //_this.cacheCellCtx.drawImage(_this.grid, x0, y0, innerWidth, innerHeight, x0, y0, innerWidth, innerHeight);
+    //    _this.state.dynamicProperties.cacheImages[JSON.stringify(cellProperties) + "_" + (x1 - x0) + "_" + (y1 - y0)] = _this.ctx.getImageData(x0, y0, innerWidth, innerHeight);
+    //    //// save canvas image as data url (png format by default)
+    //    //var dataURL = _this.grid.toDataURL();
 
-        //// set canvasImg image src to dataURL
-        //// so it can be saved as an image
-        //document.getElementById('canvasImg').src = dataURL;
-        //debugger;
-        //_this.state.dynamicProperties.cacheImages[JSON.stringify(cellProperties)] = { x: 0, y: 0, width: innerWidth, height: innerHeight };
-    }
+    //    //// set canvasImg image src to dataURL
+    //    //// so it can be saved as an image
+    //    //document.getElementById('canvasImg').src = dataURL;
+    //    //debugger;
+    //    //_this.state.dynamicProperties.cacheImages[JSON.stringify(cellProperties)] = { x: 0, y: 0, width: innerWidth, height: innerHeight };
+    //}
     return matrix;
 }
 
 CanvasGrid.measureText = function (_this, text, textStyle) {
-    _this.cellCtx.textAlign = textStyle.textAlign;
-    _this.cellCtx.textBaseline = textStyle.textBaseline;
+    _this.ctx.textAlign = textStyle.textAlign;
+    _this.ctx.textBaseline = textStyle.textBaseline;
     var fontText = '';
     fontText += textStyle.size + 'pt ';
     fontText += textStyle.family + ' ';
@@ -881,9 +886,9 @@ CanvasGrid.measureText = function (_this, text, textStyle) {
     if (textStyle.italics)
         fontText += 'italic ';
 
-    _this.cellCtx.font = fontText;
+    _this.ctx.font = fontText;
 
-    return _this.cellCtx.measureText(text);
+    return _this.ctx.measureText(text);
 }
 
 CanvasGrid.drawImage = function (_this, x0, y0, x1, y1, image) {
@@ -911,8 +916,8 @@ CanvasGrid.drawImage = function (_this, x0, y0, x1, y1, image) {
 }
 
 CanvasGrid.drawText = function (_this, x0, y0, x1, y1, cellValue, textStyle) {
-    _this.cellCtx.textAlign = textStyle.textAlign;
-    _this.cellCtx.textBaseline = textStyle.textBaseline;
+    _this.ctx.textAlign = textStyle.textAlign;
+    _this.ctx.textBaseline = textStyle.textBaseline;
     var fontText = '';
     fontText += textStyle.size + 'pt ';
     fontText += textStyle.family + ' ';
@@ -921,7 +926,7 @@ CanvasGrid.drawText = function (_this, x0, y0, x1, y1, cellValue, textStyle) {
     if (textStyle.italics)
         fontText += 'italic ';
 
-    _this.cellCtx.font = fontText;
+    _this.ctx.font = fontText;
 
     var text = cellValue;
 
@@ -929,33 +934,33 @@ CanvasGrid.drawText = function (_this, x0, y0, x1, y1, cellValue, textStyle) {
     var offsetX = 0;
     var offsetY = 0;
 
-    _this.cellCtx.fillStyle = textStyle.color;
+    _this.ctx.fillStyle = textStyle.color;
 
     //if (x0===1125) debugger;
     if (textStyle.wrap === 0) {
-        if (_this.cellCtx.textAlign == 'left') {
+        if (_this.ctx.textAlign == 'left') {
             offsetX = 5;
         }
-        else if (_this.cellCtx.textAlign == 'right') {
+        else if (_this.ctx.textAlign == 'right') {
             offsetX = (x1 - x0) - 5;
         }
-        else if (_this.cellCtx.textAlign == 'center') {
+        else if (_this.ctx.textAlign == 'center') {
             offsetX = ((x1 - x0) / 2);
         }
 
-        if (_this.cellCtx.textBaseline == 'bottom') {
+        if (_this.ctx.textBaseline == 'bottom') {
             offsetY = (y1 - y0) - 1;
         }
-        else if (_this.cellCtx.textBaseline == 'top') {
+        else if (_this.ctx.textBaseline == 'top') {
             offsetY = 1;
         }
-        else if (_this.cellCtx.textBaseline == 'middle') {
+        else if (_this.ctx.textBaseline == 'middle') {
             offsetY = ((y1 - y0) / 2);
         }
-        _this.cellCtx.fillText(text, x0 + offsetX, y0 + offsetY);
+        _this.ctx.fillText(text, x0 + offsetX, y0 + offsetY);
     }
     else if (textStyle.wrap === 2) {
-        var measure = _this.cellCtx.measureText(text);
+        var measure = _this.ctx.measureText(text);
         var currWidth = measure.width + 10;
         if (currWidth > _this.state.gridProperties.width - _this.state.dynamicProperties.freezeX) {
             currWidth = _this.state.gridProperties.width - _this.state.dynamicProperties.freezeX;
@@ -965,26 +970,26 @@ CanvasGrid.drawText = function (_this, x0, y0, x1, y1, cellValue, textStyle) {
             maxWidth = currWidth;
             x1 = (maxWidth + x0);
         }
-        if (_this.cellCtx.textAlign == 'left') {
+        if (_this.ctx.textAlign == 'left') {
             offsetX = 5;
         }
-        else if (_this.cellCtx.textAlign == 'right') {
+        else if (_this.ctx.textAlign == 'right') {
             offsetX = (x1 - x0) - 5;
         }
-        else if (_this.cellCtx.textAlign == 'center') {
+        else if (_this.ctx.textAlign == 'center') {
             offsetX = ((x1 - x0) / 2);
         }
 
-        if (_this.cellCtx.textBaseline == 'bottom') {
+        if (_this.ctx.textBaseline == 'bottom') {
             offsetY = (y1 - y0) - 1;
         }
-        else if (_this.cellCtx.textBaseline == 'top') {
+        else if (_this.ctx.textBaseline == 'top') {
             offsetY = 1;
         }
-        else if (_this.cellCtx.textBaseline == 'middle') {
+        else if (_this.ctx.textBaseline == 'middle') {
             offsetY = ((y1 - y0) / 2);
         }
-        _this.cellCtx.fillText(text, x0 + offsetX, y0 + offsetY);
+        _this.ctx.fillText(text, x0 + offsetX, y0 + offsetY);
     }
     else {
         var finalLines = [];
@@ -994,7 +999,7 @@ CanvasGrid.drawText = function (_this, x0, y0, x1, y1, cellValue, textStyle) {
         var maxHeight = textStyle.size + parseInt(textStyle.size / 2.5);
 
         words.forEach(function (word) {
-            var measure = _this.cellCtx.measureText(currText + word);
+            var measure = _this.ctx.measureText(currText + word);
             var currWidth = measure.width;
             var currHeight = measure.height;
             if (currHeight > maxHeight)
@@ -1002,7 +1007,7 @@ CanvasGrid.drawText = function (_this, x0, y0, x1, y1, cellValue, textStyle) {
             if (maxWidth < currWidth) {
                 for (var c = 0; c < word.length; c++) {
                     var char = word[c];
-                    measure = _this.cellCtx.measureText(currText + char);
+                    measure = _this.ctx.measureText(currText + char);
                     currWidth = measure.width;
                     currHeight = measure.height;
                     if (currHeight > maxHeight)
@@ -1027,27 +1032,27 @@ CanvasGrid.drawText = function (_this, x0, y0, x1, y1, cellValue, textStyle) {
         if ((y1 - y0) < (finalMaxHeight))
             y1 = finalMaxHeight + y0;
 
-        if (_this.cellCtx.textAlign == 'left') {
+        if (_this.ctx.textAlign == 'left') {
             offsetX = 5;
         }
-        else if (_this.cellCtx.textAlign == 'right') {
+        else if (_this.ctx.textAlign == 'right') {
             offsetX = (x1 - x0) - 5;
         }
-        else if (_this.cellCtx.textAlign == 'center') {
+        else if (_this.ctx.textAlign == 'center') {
             offsetX = ((x1 - x0) / 2);
         }
 
-        if (_this.cellCtx.textBaseline == 'bottom') {
+        if (_this.ctx.textBaseline == 'bottom') {
             offsetY = ((y1 - y0) - 1) - ((finalLines.length - 1) * maxHeight);
         }
-        else if (_this.cellCtx.textBaseline == 'top') {
+        else if (_this.ctx.textBaseline == 'top') {
             offsetY = 1;
         }
-        else if (_this.cellCtx.textBaseline == 'middle') {
+        else if (_this.ctx.textBaseline == 'middle') {
             offsetY = ((y1 - y0) / 2) - ((finalLines.length - 1) / 2 * maxHeight);
         }
         finalLines.forEach(function (singleLine, index) {
-            _this.cellCtx.fillText(singleLine, x0 + offsetX, y0 + offsetY + (index * maxHeight));
+            _this.ctx.fillText(singleLine, x0 + offsetX, y0 + offsetY + (index * maxHeight));
         });
     }
     return [x1 - x0, y1 - y0];

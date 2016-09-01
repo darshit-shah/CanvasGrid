@@ -3,15 +3,23 @@
 <head>
     <meta charset="UTF-8" name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0">
     <title>Title of the document</title>
+    <script src="webcomponents-lite.min.js"></script>
     <script src="d3.v3.js"></script>
     <script src="../../CanvasGrid.v2.js"></script>
     <script>
         function setEventCallback(gridSelector) {
             var grid = document.querySelector(gridSelector);
-            var numRows = 1000;
+            var numRows = 1000000;
             var numCols = 100;
 
             var data = new Array(numRows);
+            //grid.setCallbackMethod('getCellValue', function (rowNumber, colNumber) {
+            //    if (data != undefined && data[rowNumber] != undefined && data[rowNumber][colNumber] != undefined) {
+            //        //return data[rowNumber][colNumber];
+            //        return rowNumber+"_"+colNumber;
+            //    }
+            //    return null;
+            //});
             grid.setCallbackMethod('getData', function (ref, nullValues, cb) {
                 var rows = Object.keys(nullValues);
                 rows.forEach(function (rowIndex) {
@@ -20,26 +28,56 @@
                         var value = null;
                         if (rowIndex == 0) {
                             if (colIndex == 0) {
-                                value = "";
+                                value = {
+                                    text: "",
+                                    cellProperties: {
+                                        background: { color: '#EFEFEF' },
+                                        textStyle: { textAlign: 'center', wrap: 2 }
+                                    }
+                                };
                             }
-                            else {
-                                value = getAlphaColumnHeader(colIndex - 1, "");
+                            else {//Column Header AZ
+                                value = {
+                                    text: getAlphaColumnHeader(colIndex - 1, ""),
+                                    cellProperties: {
+                                        background: { color: '#EFEFEF' },
+                                        textStyle: { textAlign: 'center', wrap: 2 }
+                                    }
+                                };
                             }
                         }
                         else if (rowIndex == 1) {
                             if (colIndex == 0) {
-                                value = "";
+                                value = {
+                                    text: "",
+                                    cellProperties: {
+                                        background: { color: '#EFEFEF' },
+                                        textStyle: { textAlign: 'center', wrap: 2 }
+                                    }
+                                };
                             }
-                            else {
-                                value = "Column" + (colIndex)
+                            else {//Column Name
+                                value = {
+                                    text: "Column " + (colIndex),
+                                    cellProperties: {
+                                        background: { color: '#EFEFEF' },
+                                        textStyle: { textAlign: 'center', wrap: 2 }
+                                    }
+                                }
                             }
                         }
                         else {
+                            //Row Header
                             if (colIndex == 0) {
-                                value = (rowIndex - 1).toString()
+                                value = {
+                                    text: (rowIndex - 1).toString(),
+                                    cellProperties: {
+                                        background: { color: '#EFEFEF' },
+                                        textStyle: { textAlign: 'center', wrap: 2 }
+                                    }
+                                }
                             }
                             else {
-                                if (colIndex == 1);
                                 value = {
                                     //text: "Column value for " + (rowIndex - 1).toString() + "_" + (colIndex).toString(),
                                     text: (rowIndex - 1).toString() + "_" + (colIndex).toString(),
@@ -69,15 +107,14 @@
                             }
                         }
                         nullValues[rowIndex][colIndex] = value;
+                        if (data[rowIndex] == null) {
+                            data[rowIndex] = new Array(numCols);
+                        }
+                        data[rowIndex][colIndex] = value;
                     });
                 });
-                //setTimeout(function () {
-                //    cb(ref, nullValues);
-                //    gridData = null;
-                //}, 100 + ((Math.random() * 100) * (Math.random() * 10)));
 
                 setTimeout(function () {
-                    debugger;
                     cb(ref, nullValues);
                 }, 10);
             });
@@ -153,6 +190,11 @@
                             }
                         }
                     }
+                    else if (data != undefined && data[rowIndex] != undefined && data[rowIndex][colIndex] != undefined) {
+                        value = data[rowIndex][colIndex];
+                        //value = null;
+                        //value = rowIndex + "_" + colIndex
+                    }
                 }
                 return value;
             });
@@ -181,7 +223,8 @@
     </script>
 </head>
 <body>
-    <canvas-grid id="grid1" width="500px" height="200px" gridlinescolor="#AAA" backgroundcolor="#FFFFFF" rowstartindex="0" colstartindex="0" rowheight="30" colwidth="100" rows="0" cols="0" freezerowindex="2" freezecolindex="1"></canvas-grid>
+    <canvas-grid id="grid1" width="500px" height="200px" gridlinescolor="#000000" backgroundcolor="#FFFFFF" rowstartindex="0" colstartindex="0" rowheight="22" colwidth="20" rows="0" cols="0" freezerowindex="2" freezecolindex="1"></canvas-grid>
+    <!--<img id="canvasImg" alt="Right click to save me!" style="margin-top:20px; border:2px">-->
     <!--<div>
         <canvas-grid id="grid2" width="800px" height="300px" rows="50" cols="50" gridlinescolor="green"></canvas-grid>
     </div>-->

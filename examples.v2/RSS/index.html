@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0">
+    <title>Title of the document</title>
+    <script src="jquery-2.2.2.min.js"></script>
+    <script src="webcomponents-lite.min.js"></script>
+    <script src="d3.v3.js"></script>
+    <script src="../../CanvasGrid.v2.js"></script>
+    <script>
+        var height = (window.innerHeight - 20);
+        var width = (window.innerWidth - 20);
+        //height = 500;
+        $(document).ready(function () {
+            $.ajax({
+                url: 'https://ajax.googleapis.com/ajax/services/feed/load?v=1.0&num=10&callback=?&q=' + encodeURIComponent("https://flipboard.com/@audis7spock/meme-s6nn2ie7z.rss"),
+                dataType: 'json',
+                success: function (data) {
+                    if (data.responseData.feed && data.responseData.feed.entries) {
+                        processData(data.responseData.feed.entries);
+                    }
+                }
+            });
+        });
+
+        var currData = [];
+
+        function processData(iData) {
+            for (var i = 0; i < 5; i++) {
+                iData = iData.concat(iData);
+            }
+            var screenHeight = height;
+            iData.forEach(function (d) {
+                if (!d.mediaGroups || !d.mediaGroups[0] || !d.mediaGroups[0].contents || !d.mediaGroups[0].contents[0])
+                    return;
+                var imgData = {
+                    text: "",
+                    cellProperties: {
+                        height: screenHeight / 2,
+                        background: {
+                            color: '#FCFCFC',
+                            img: {
+                                url: d.mediaGroups[0].contents[0].url
+                                //type: d.mediaGroups[0].contents[0].type,
+                                //height: screenHeight / 2,
+                                //width: d.mediaGroups[0].contents[0].width * ((screenHeight / 2) / d.mediaGroups[0].contents[0].height)
+                            }
+                        },
+                        textStyle: {
+                            textAlign: 'left',
+                            textBaseline: 'top',
+                            size: 8,
+                            family: 'Calibri',
+                            bold: true,
+                            italics: false,
+                            color: 'black',
+                            wrap: 0
+                        }
+                    }
+                };
+
+                var headerData = {
+                    text: d.title,
+                    cellProperties: {
+                        height: screenHeight / 12,
+                        background: { color: '#FCFCFC', img: null },
+                        textStyle: {
+                            textAlign: 'left',
+                            textBaseline: 'top',
+                            size: 20,
+                            family: 'Calibri',
+                            bold: true,
+                            italics: false,
+                            color: 'black',
+                            wrap: 1
+                        }
+                    }
+                };
+
+                var contentData = {
+                    text: d.content,
+                    cellProperties: {
+                        height: 5 * screenHeight / 12,
+                        background: { color: '#FCFCFC', img: null },
+                        textStyle: {
+                            textAlign: 'left',
+                            textBaseline: 'top',
+                            size: 15,
+                            family: 'Calibri',
+                            bold: false,
+                            italics: false,
+                            color: 'black',
+                            wrap: 1
+                        }
+                    }
+                };
+                currData.push([imgData]);
+                currData.push([headerData]);
+                currData.push([contentData]);
+            });
+            setEventCallback('#grid1');
+        }
+
+        function setEventCallback(gridSelector) {
+            var grid = document.querySelector(gridSelector);
+            var numRows = currData.length;
+            var numCols = 1;
+
+
+            grid.setAttribute("rows", numRows);
+            grid.setAttribute("cols", numCols);
+            grid.setAttribute('width', width + 'px');
+            grid.setAttribute('height', height + 'px');
+            grid.setAttribute('colwidth', width);
+
+
+            var data = new Array(numRows);
+            grid.setCallbackMethod('getData', function (ref, nullValues, cb) {
+                var rows = Object.keys(nullValues);
+                rows.forEach(function (rowIndex) {
+                    var cols = Object.keys(nullValues[rowIndex]);
+                    cols.forEach(function (colIndex) {
+                        nullValues[rowIndex][colIndex] = currData[rowIndex][colIndex];
+                    });
+                });
+                setTimeout(function () {
+                    cb(ref, nullValues);
+                }, 10);
+            });
+
+            grid.setCallbackMethod('getCellValue', function (rowNumber, colNumber) {
+                if (currData != undefined && currData[rowNumber] != undefined && currData[rowNumber][colNumber] != undefined) {
+                    return currData[rowNumber][colNumber];
+                }
+                return null;
+            });
+        }
+    </script>
+</head>
+<body>
+    <canvas-grid id="grid1" width="500px" height="10000px" gridlinescolor="#AAA" backgroundcolor="#FFFFFF" rowstartindex="0" colstartindex="0" rowheight="100" colwidth="0" rows="0" cols="0" freezerowindex="0" freezecolindex="0"></canvas-grid>
+    <!--<img id="canvasImg" alt="Right click to save me!" style="margin-top: 20px;">-->
+    <!--<div>
+        <canvas-grid id="grid2" width="800px" height="300px" rows="50" cols="50" gridlinescolor="green"></canvas-grid>
+    </div>-->
+    <!--<input type="button"  onclick="clearContent()" value="clear" />
+    <div id="events">
+    </div>-->
+</body>
+</html>

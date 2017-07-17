@@ -109,7 +109,7 @@
         value: colInfo[i].name
       };
     }
-    if(options.colHeaderHeight!=0)
+    if(options.showHeaderRow)
       data.unshift(row);
     row = null;
 
@@ -1612,6 +1612,7 @@
       colInfo: [],
       data: [],
       readOnly: true,
+      showHeaderRow: true,
       rowHeaderWidth: 75,
       freezeRowIndex: 0,
       freezeColIndex: 0,

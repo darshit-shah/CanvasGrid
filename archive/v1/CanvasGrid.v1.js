@@ -109,7 +109,8 @@
         value: colInfo[i].name
       };
     }
-    data.unshift(row);
+    if(options.colHeaderHeight!=0)
+      data.unshift(row);
     row = null;
 
     var numRows = data.length;

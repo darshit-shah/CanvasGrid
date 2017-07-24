@@ -1353,7 +1353,10 @@
           return false;
         } else {
           vScroll.find('div').css('height', parseFloat(vScroll.find('div').css('height')) + ((cellHeight - ((y1 - y0) - data[i].height)) - data[i].height));
-          data[i].height += (cellHeight - ((y1 - y0) - data[i].height)) - data[i].height;
+           if (cellHeight > data[i].height) {
+            data[i].height = cellHeight;
+            // data[i].height += (cellHeight - ((y1 - y0) - data[i].height)) - data[i].height;
+          }
           return true;
           //return false;
         }
